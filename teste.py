@@ -9,9 +9,12 @@ app = Flask(__name__)
 # Configuração para uploads
 UPLOAD_FOLDER = 'static/uploads'
 RESULTS_FOLDER = 'static/results'
+# configuração para relatorios txt
+TXT_FOLDER = 'static/txt'
+
 
 # Verifique se as pastas existem, se não, crie-as
-for folder in [UPLOAD_FOLDER, RESULTS_FOLDER]:
+for folder in [UPLOAD_FOLDER, RESULTS_FOLDER, TXT_FOLDER]:
     if not os.path.exists(folder):
         os.makedirs(folder)
 
@@ -25,14 +28,14 @@ def allowed_file(filename):
 # Função para desenhar boxes de detecção na imagem
 def draw_bounding_boxes(image, boxes, labels, colors=None):
     if colors is None:
-        colors = [(255, 0, 0) for _ in range(len(boxes))]
+        colors = [(255, 51, 0) for _ in range(len(boxes))]
     
     for i, box in enumerate(boxes):
         x1, y1, x2, y2 = map(int, box)
         cv2.rectangle(image, (x1, y1), (x2, y2), colors[i], 2)
 
         # Colocar a classe do objeto no topo da caixa
-        cv2.putText(image, str(labels[i]), (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, colors[i], 2)
+        cv2.putText(image, str(labels[i]), (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 5, colors[i], 8)
         
     return image
 
@@ -52,6 +55,13 @@ def process_image_with_yolo(image_path):
 
     # Mapear os ids das classes para os nomes das classes
     class_names = [labels[int(cls)] for cls in classes]
+
+     # função para gerar os relatorios em txt
+    txt_path = os.path.join(TXT_FOLDER, f"{os.path.basename(image_path).split('.')[0]}.txt")
+    with open(txt_path, 'w') as f:
+        f.write(f"Relatório de Detecção de Objetos - {os.path.basename(image_path)}\n\n")
+        for i, class_name in enumerate(class_names):
+            f.write(f"Objeto {i+1}: {class_name}\n")
 
     # Desenhar as caixas e as classes na imagem
     image_with_boxes = draw_bounding_boxes(image_rgb, boxes, class_names)

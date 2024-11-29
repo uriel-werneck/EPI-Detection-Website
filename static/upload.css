@@ -67,6 +67,14 @@
   .inpdddut[type="submit"]:hover {
   background-color: #b44116; 
   }
+  .preview-container img {
+    max-width: 100%;     /* A imagem não será maior do que o contêiner */
+    height: auto;        /* Mantém a proporção original da imagem */
+    max-height: 500px;   /* Limita a altura máxima */
+    margin: 10px auto;   /* Adiciona espaço entre as imagens */
+    border-radius: 5px;
+  }
   
+
   
       
