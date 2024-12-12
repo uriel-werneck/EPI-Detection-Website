@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='cad.css') }}">
+{% endblock %}
+<body>
+    {% block content %}
+    <form class="form">
+        <p class="title">Cadastro </p>
+        <p class="message">Cadastre-se agora e tenha acesso ao Site. </p>
+            <div class="flex">
+            <label>
+                <input class="input" type="text" placeholder="" required="">
+                <span>Nome</span>
+            </label>
+    
+            <label>
+                <input class="input" type="text" placeholder="" required="">
+                <span>Sobrenome</span>
+            </label>
+        </div>  
+                
+        <label>
+            <input class="input" type="email" placeholder="" required="">
+            <span>Email</span>
+        </label> 
+            
+        <label>
+            <input class="input" type="password" placeholder="" required="">
+            <span>Senha</span>
+        </label>
+        <label>
+            <input class="input" type="password" placeholder="" required="">
+            <span>Confirmar Senha</span>
+        </label>
+        <button class="submit"> <a href="{{ url_for('index') }}">Enviar</a></button>
+        <p class="signin">Já tem uma conta? <a href="{{ url_for('index') }}">Entrar</a> </p>
+     
+</body>
+</form>
+</html>
+{% endblock %}
+
+    
+    

@@ -1,0 +1,25 @@
+
+.nav-link:hover {
+    color: #ffcc00; /* Cor do texto ao passar o mouse */
+    background-color: rgba(0, 0, 0, 0.1); /* Cor de fundo ao passar o mouse */
+    transition: all 0.3s ease; /* Transição suave */
+    border-radius: 5px; /* Cantos arredondados */
+    
+  }
+  .navbar {
+    padding: 3.5rem 3rem;
+    height: 80px;
+  }
+  
+  footer {
+    position: fixed; 
+    bottom: 0; 
+    left: 0;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.05); 
+    
+  }
+  
+  
+  
+    
