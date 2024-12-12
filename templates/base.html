@@ -17,20 +17,31 @@
         <div class="container-fluid"
         style="background-color: #f96a2e;">
             
-          <a class="navbar-brand" href="#" style="color:floralwhite">EPI Detection </a>
+          
           <!-- <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTogglerDemo02" aria-controls="navbarTogglerDemo02" aria-expanded="false" aria-label="Toggle navigation"> -->
             <!-- <span class="navbar-toggler-icon"></span> -->
           </button>
-          <ul class="nav justify-content-end">
+
+          
+          <ul class="nav ">
+            
+            <a class="navbar-brand" href="#" style="color:floralwhite">EPI Detection </a>
             <li class="nav-item">
               <a class="nav-link "  href="#" style="color:floralwhite; font-size: 18px;"  >Home</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link"  href="{{ url_for('index') }}" style="color:floralwhite; font-size: 18px;">Login</a>
-            </li>
-            <li class="nav-item">
               <a class="nav-link"  href="{{ url_for('upload') }}" style="color:floralwhite; font-size: 18px;">uploads</a>
             </li>
+            <li class="nav-item">
+              <a class="nav-link"  href="{{ url_for('upload') }}" style="color:floralwhite; font-size: 18px;">Relatório</a>
+            </li>
+          </ul>
+
+          <ul class="nav justify-content-end">
+            <li class="nav-item">
+              <a class="nav-link"  href="{{ url_for('index') }}" style="color:floralwhite; font-size: 18px;">Login</a>
+            </li>
+
           </ul>
         </div>
       </nav>

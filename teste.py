@@ -97,7 +97,7 @@ def process_image_with_yolo(image_path):
 
     # Retornar o caminho para visualização
     return url_for('static', filename=f'results/{os.path.basename(result_image_path)}'), class_names
-# Função para processar vídeos com YOLO
+# Função para processar vídeos com YOLO.
 def process_video_with_classes(video_path, output_path, model):
     
     cap = cv2.VideoCapture(video_path)
