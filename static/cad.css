@@ -104,6 +104,7 @@
     font-weight: 600;
   }
   
+  
   .form label .input:valid + span {
     color: rgb(219, 121, 8);
   }

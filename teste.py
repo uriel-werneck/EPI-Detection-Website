@@ -181,6 +181,36 @@ def index():
 @app.route("/cadastro")
 def cadastro():
     return render_template("cadastro.html")
+@app.route("/relatorios")
+def relatorios():
+    reports = []
+    
+    # Iterar sobre todos os arquivos de relatório na pasta TXT_FOLDER
+    for txt_file in os.listdir(TXT_FOLDER):
+        if txt_file.endswith('.txt'):  # Garantir que estamos lidando apenas com arquivos .txt
+            report = {}
+            txt_path = os.path.join(TXT_FOLDER, txt_file)
+
+            # Substituir extensão do arquivo para encontrar a imagem correspondente
+            image_name = txt_file.replace('.txt', '.png')  # Use '.png' ou outra extensão conforme necessário
+            image_path = os.path.join(RESULTS_FOLDER, image_name)
+
+            # Verificar se a imagem correspondente existe
+            if os.path.exists(image_path):
+                report['image_url'] = url_for('static', filename=f'results/{image_name}')
+            else:
+                report['image_url'] = None  # Para evitar erros se a imagem não for encontrada
+
+            # Ler os objetos detectados do relatório .txt
+            report['objects'] = []
+            with open(txt_path, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+                for line in lines[2:]:  # Ignorar as duas primeiras linhas do cabeçalho
+                    report['objects'].append(line.strip())
+
+            reports.append(report)
+
+    return render_template("relatorios.html", reports=reports)
 
 if __name__ == "__main__":
     app.run(debug=True)

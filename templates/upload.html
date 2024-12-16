@@ -11,6 +11,7 @@
    <div class="container">
        <form method="POST" enctype="multipart/form-data">
            <label for="arquivo">Selecionar arquivos:</label>
+           
            <input 
                type="file" 
                name="arquivos" 
@@ -32,10 +33,14 @@
                </video>
            {% else %}
                <img src="{{ file_url }}"  alt="Arquivo carregado">
+               
            {% endif %}
+           
        {% endfor %}
    </div>
+   
    {% endif %}
+
    {% endblock %}
 </body>
 </html>
