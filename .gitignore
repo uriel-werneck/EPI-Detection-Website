@@ -1,4 +1,4 @@
 .venv/
-static/results
-static/txt
-static/uploads
+static/results/
+static/txt/
+static/uploads/
