@@ -22,6 +22,19 @@ for folder in [UPLOAD_FOLDER, RESULTS_FOLDER, TXT_FOLDER]:
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['RESULTS_FOLDER'] = RESULTS_FOLDER
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'mp4'}
+# Dicionário para tradução de nomes de classes
+TRANSLATIONS = {
+    "helmet": "capacete",
+    "vest": "colete",
+    "gloves": "luvas",
+    "boots": "botas",
+    "safety-boot": "botas  de segurança",
+    "safety-vest": "colete de segurança",
+    "glass": "vidro",
+    "worker": "trabalhador",
+    "person": "pessoa",
+   
+}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -66,22 +79,20 @@ def draw_bounding_boxes(image, boxes, class_names=None, colors=None):
 
 # Função para salvar e retornar URLs de imagens com caixas e classes
 def process_image_with_yolo(image_path):
-   
-    
     # Carregar a imagem
     image = cv2.imread(image_path)
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
     # Realizar a detecção com YOLO
     results = model(image_rgb)
-    boxes = results[0].boxes.xyxy.cpu().numpy()  # Coordenadas das boxes detectadas
-    labels = results[0].names  # Dicionário com as classes
-    classes = results[0].boxes.cls.cpu().numpy()  # Classes dos objetos detectados
+    boxes = results[0].boxes.xyxy.cpu().numpy() if results[0].boxes else []  # Coordenadas das boxes detectadas
+    classes = results[0].boxes.cls.cpu().numpy().astype(int) if results[0].boxes else []  # IDs das classes detectadas
 
-    # Mapear os ids das classes para os nomes das classes
-    class_names = [labels[int(cls)] for cls in classes]
+    # Mapear os IDs das classes para os nomes traduzidos
+    class_names = [TRANSLATIONS.get(model.names[cls], model.names[cls]) for cls in classes]
+    print(class_names)
 
-     # função para gerar os relatorios em txt
+    # Criar o relatório de texto
     txt_path = os.path.join(TXT_FOLDER, f"{os.path.basename(image_path).split('.')[0]}.txt")
     with open(txt_path, 'w', encoding='utf-8') as f:
         f.write(f"Relatório de Detecção de Objetos - {os.path.basename(image_path)}\n\n")
@@ -97,6 +108,8 @@ def process_image_with_yolo(image_path):
 
     # Retornar o caminho para visualização
     return url_for('static', filename=f'results/{os.path.basename(result_image_path)}'), class_names
+
+
 # Função para processar vídeos com YOLO.
 def process_video_with_classes(video_path, output_path, model):
     
@@ -184,7 +197,6 @@ def cadastro():
 @app.route("/relatorios")
 def relatorios():
     reports = []
-    
     # Iterar sobre todos os arquivos de relatório na pasta TXT_FOLDER
     for txt_file in os.listdir(TXT_FOLDER):
         if txt_file.endswith('.txt'):  # Garantir que estamos lidando apenas com arquivos .txt

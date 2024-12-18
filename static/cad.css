@@ -56,7 +56,7 @@
   .signin {
     text-align: center;
   }
-  
+
   .signin a {
     color: #d4501b;
   }
@@ -68,7 +68,12 @@
   .flex {
     display: flex;
     width: 100%;
-    gap: 6px;
+    gap: 15px;
+  }
+  .flex label {
+    flex: 1; /* Distribui o espaço igualmente entre os labels */
+    display: flex;
+    flex-direction: column;
   }
   
   .form label {
@@ -120,7 +125,7 @@
     transform: .3s ease;
   }
   .submit a {
-    text-decoration: none; /* Remove o sublinhado */
+    text-decoration: none; 
     color: white;          /* Define a cor do texto como branco */
     font-size: inherit;    /* Herda o tamanho da fonte do botão */
     font-weight: bold;     /* Deixa o texto em negrito */

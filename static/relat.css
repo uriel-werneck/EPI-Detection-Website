@@ -3,10 +3,7 @@
     margin-bottom: 50px;  /* adiciona margem no final  */
 }
 
-/* .card {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    border-radius: 10px;
-} */
+
 .card {
     width: 400px;               /* Largura fixa do card */
     height: 400px;              /* Altura fixa do card */

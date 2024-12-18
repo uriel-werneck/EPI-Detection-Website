@@ -22,7 +22,6 @@
            <input value="Enviar" type="submit" class="inpdddut">
        </form>
    </div>
-
    {% if file_urls %}
    <div class="preview-container">
        {% for file_url in file_urls %}
@@ -33,7 +32,7 @@
                </video>
            {% else %}
                <img src="{{ file_url }}"  alt="Arquivo carregado">
-               
+
            {% endif %}
            
        {% endfor %}
