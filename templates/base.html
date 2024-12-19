@@ -33,13 +33,13 @@
                 Uploads
               </a>
               <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#">Imagens</a></li>
-                <li><a class="dropdown-item" href="#">Vídeos</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('upload') }}">Imagens</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('upload_videos') }}">Vídeos</a></li>
               </ul>
             </li>
-            <li class="nav-item">
+            <!-- <li class="nav-item">
               <a class="nav-link"  href="{{ url_for('upload') }}" style="color:floralwhite; font-size: 18px;">uploads</a>
-            </li>
+            </li> -->
             <li class="nav-item">
               <a class="nav-link"  href="{{ url_for('relatorios') }}" style="color:floralwhite; font-size: 18px;">Relatório</a>
             </li>

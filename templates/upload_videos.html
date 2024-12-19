@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='upload.css') }}">
+{% endblock %}
+
+<body>
+   {% block content %}
+   <h3>Upload de Vídeos</h3>
+   <hr>
+
+   <div class="container">
+       <form method="POST" enctype="multipart/form-data">
+           <label for="video">Selecionar Vídeos:</label>
+           <input 
+               type="file" 
+               name="arquivos_videos" 
+               class="file-input" 
+               accept="video/mp4" 
+               multiple 
+           />
+           <input value="Enviar Vídeos" type="submit" class="inpdddut">
+       </form>
+   </div>
+
+   {% if file_urls %}
+   <div class="preview-container">
+       {% for file_url in file_urls %}
+           <video controls width="640" height="360">
+               <source src="{{ file_url }}" type="video/mp4">
+               Seu navegador não suporta vídeos.
+           </video>
+       {% endfor %}
+   </div>
+   {% endif %}
+
+   {% endblock %}
+</body>
+</html>

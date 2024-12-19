@@ -1,8 +1,11 @@
 from flask import Flask, render_template, request, url_for
 import os
 from functions_detect import process_image_with_yolo, process_video_with_classes
+from database import db, init_db
 
 app = Flask(__name__)
+init_db(app)
+
 
 # Configuração para uploads
 UPLOAD_FOLDER = 'static/uploads'
@@ -20,6 +23,9 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'mp4'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+def allowed_video(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() == 'mp4'
+
 
 @app.route("/index")
 def index():
@@ -32,7 +38,7 @@ def cadastro():
 @app.route("/", methods=["GET", "POST"])
 def upload():
     if request.method == "POST":
-        uploaded_files = request.files.getlist("arquivos")  # Obtém todos os arquivos enviados
+        uploaded_files = request.files.getlist("arquivos")  
         file_urls = []  # URLs das imagens com boxes
         file_classes = []  # Classes dos objetos detectados
 
@@ -59,6 +65,35 @@ def upload():
         return render_template("upload.html", file_urls=file_urls, file_classes=file_classes)
 
     return render_template("upload.html", file_urls=None, file_classes=None)
+
+# nova rota para upload somente de videos
+@app.route("/upload_videos", methods=["GET", "POST"])
+def upload_videos():
+    if request.method == "POST":
+        uploaded_files = request.files.getlist("arquivos_videos")  # Certifique-se de que o nome do campo está correto
+        file_urls = []  # URLs dos vídeos processados
+
+        for file in uploaded_files:
+            if file and allowed_video(file.filename):  # Verificar se é vídeo
+                filename = file.filename
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file.save(file_path)
+
+                # Processar o vídeo com YOLO
+                output_video_path = os.path.join(app.config['RESULTS_FOLDER'], f"processed_{filename}")
+                result = process_video_with_classes(file_path, output_video_path)
+                if result is None:
+                    print(f"Erro ao processar o vídeo: {filename}")
+                    continue
+                
+                # Adicionar URL do vídeo processado para exibição
+                file_urls.append(url_for('static', filename=f'results/processed_{filename}'))
+
+        return render_template("upload_videos.html", file_urls=file_urls)
+
+    return render_template("upload_videos.html", file_urls=None)
+
+
 
 @app.route("/relatorios")
 def relatorios():
@@ -91,5 +126,9 @@ def relatorios():
     return render_template("relatorios.html", reports=reports)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
+    # Criar as tabelas no banco de dados (executar uma vez)
+    with app.app_context():
+        print("Tentando criar as tabelas...")
+        db.create_all()  # Cria as tabelas no banco de dados
     app.run(debug=True)
