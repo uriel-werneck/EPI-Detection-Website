@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
 
 # Inicialização do banco de dados
 db = SQLAlchemy()
@@ -19,7 +20,7 @@ def init_db(app):
     db.init_app(app)
     
 # Definindo o modelo User
-class User(db.Model):
+class User(UserMixin, db.Model):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
