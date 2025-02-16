@@ -1,7 +1,8 @@
 from flask import Flask, render_template, request, url_for
 import os
 from functions_detect import process_image_with_yolo, process_video_with_classes
-from database import db, init_db
+from database import db, init_db, User
+from werkzeug.security import generate_password_hash
 
 app = Flask(__name__)
 init_db(app)
@@ -26,13 +27,44 @@ def allowed_file(filename):
 def allowed_video(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() == 'mp4'
 
+def can_register(email: str, senha: str, confirmar_senha: str) -> bool:
+    '''verifica se os dados para registrar a conta estão corretos'''
+    user_with_email = User.query.filter_by(email=email).first()
+    if user_with_email:
+        print('Já existe um usuário com esse email!')
+        return False
+    if senha != confirmar_senha:
+        print('Senhas não conhicidem!')
+        return False
+    return True
 
 @app.route("/index")
 def index():
     return render_template("index.html")
 
-@app.route("/cadastro")
+@app.route("/cadastro", methods=["GET", "POST"])
 def cadastro():
+    if request.method == "POST":
+        nome = request.form.get('nome')
+        sobrenome = request.form.get('sobrenome')
+        cpf = request.form.get('cpf')
+        telefone = request.form.get('telefone')
+        email = request.form.get('email')
+        senha = request.form.get('senha')
+        confirmar_senha = request.form.get('confirmar_senha')
+
+        if can_register(email, senha, confirmar_senha):
+            # criptografa a senha antes de salvar no banco de dados
+            hash_password = generate_password_hash(senha) 
+
+            # registra o usuário no banco de dados
+            new_user = User(nome=nome, sobrenome=sobrenome, cpf=cpf, telefone=telefone, email=email, senha=hash_password, confirmar_senha=hash_password)
+            db.session.add(new_user)
+            db.session.commit()
+            print('Usuário registrado com sucesso!')
+
+            return render_template("index.html") # Redireciona para a página de login
+        
     return render_template("cadastro.html")
 
 @app.route("/", methods=["GET", "POST"])
