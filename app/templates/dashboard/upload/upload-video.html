@@ -1,0 +1,55 @@
+{% extends "dashboard/navbar.html" %}
+
+{% block title %}Upload de Vídeo - SafetyAI{% endblock %}
+
+{% block content %}
+<div class="py-8">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-3xl font-bold tracking-tight mb-4">Upload de Vídeo</h1>
+        <p class="text-muted-foreground mb-8">Faça upload de um vídeo para análise de EPIs</p>
+
+        <form action="{{ url_for('upload', type='video') }}" method="post" enctype="multipart/form-data" class="space-y-6">
+            <div class="border-2 border-dashed rounded-lg p-8 text-center">
+                <input type="file" 
+                       id="video-upload" 
+                       name="video" 
+                       accept="video/*" 
+                       class="hidden" 
+                       onchange="previewVideo(event)">
+                <label for="video-upload" class="cursor-pointer">
+                    <div class="space-y-4">
+                        <i data-lucide="upload-cloud" class="mx-auto h-12 w-12 text-gray-400"></i>
+                        <div class="flex flex-col items-center text-sm">
+                            <span class="font-medium text-primary">Clique para fazer upload</span>
+                            <span class="text-gray-500">ou arraste e solte</span>
+                        </div>
+                        <p class="text-xs text-gray-500">MP4 ou MOV até 100MB</p>
+                    </div>
+                </label>
+                <div id="preview" class="mt-4 hidden">
+                    <video id="preview-video" class="max-h-64 mx-auto" controls></video>
+                </div>
+            </div>
+
+            <button type="submit" class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 w-full">
+                Enviar Vídeo
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+function previewVideo(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const url = URL.createObjectURL(file);
+        document.getElementById('preview').classList.remove('hidden');
+        const video = document.getElementById('preview-video');
+        video.src = url;
+        video.onload = function() {
+            URL.revokeObjectURL(url);
+        }
+    }
+}
+</script>
+{% endblock %}

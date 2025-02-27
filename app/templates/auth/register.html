@@ -1,0 +1,157 @@
+{% extends "auth/auth.base.html" %}
+{% block title %}Cadastro - EPI Detection{% endblock %}
+
+{% block content %}
+<div class="container relative min-h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
+    <div class="lg:p-8">
+        <div class="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+            <div class="flex flex-col space-y-2 text-center">
+                <h1 class="text-2xl font-semibold tracking-tight">Criar uma conta</h1>
+                <p class="text-sm text-muted-foreground">
+                    Preencha as informações abaixo para criar sua conta
+                </p>
+            </div>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="p-3 rounded-md {% if category == 'error' %}bg-destructive/15 text-destructive{% else %}bg-primary/15 text-primary{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            <div class="grid gap-6">
+                <form method="POST" action="{{ url_for('register') }}" id="registerForm">
+                    <div class="grid gap-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="grid gap-2">
+                                <label for="nome" class="text-sm font-medium">Nome</label>
+                                <input
+                                    id="nome"
+                                    name="nome"
+                                    type="text"
+                                    required
+                                    class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    placeholder="João"
+                                />
+                            </div>
+                            <div class="grid gap-2">
+                                <label for="sobrenome" class="text-sm font-medium">Sobrenome</label>
+                                <input
+                                    id="sobrenome"
+                                    name="sobrenome"
+                                    type="text"
+                                    required
+                                    class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    placeholder="Silva"
+                                />
+                            </div>
+                        </div>
+                        <div class="grid gap-2">
+                            <label for="cpf" class="text-sm font-medium">CPF</label>
+                            <input
+                                id="cpf"
+                                name="cpf"
+                                type="text"
+                                required
+                                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                placeholder="000.000.000-00"
+                            />
+                        </div>
+                        <div class="grid gap-2">
+                            <label for="telefone" class="text-sm font-medium">Telefone</label>
+                            <input
+                                id="telefone"
+                                name="telefone"
+                                type="text"
+                                required
+                                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                placeholder="(00) 00000-0000"
+                            />
+                        </div>
+                        <div class="grid gap-2">
+                            <label for="email" class="text-sm font-medium">Email</label>
+                            <input
+                                id="email"
+                                name="email"
+                                type="email"
+                                required
+                                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                placeholder="nome@exemplo.com"
+                            />
+                        </div>
+                        <div class="grid gap-2">
+                            <label for="senha" class="text-sm font-medium">Senha</label>
+                            <input
+                                id="senha"
+                                name="senha"
+                                type="password"
+                                required
+                                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            />
+                        </div>
+                        <div class="grid gap-2">
+                            <label for="confirmar_senha" class="text-sm font-medium">Confirmar Senha</label>
+                            <input
+                                id="confirmar_senha"
+                                name="confirmar_senha"
+                                type="password"
+                                required
+                                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            />
+                        </div>
+                        <button type="submit" class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
+                            Criar Conta
+                        </button>
+                    </div>
+                </form>
+                <div class="text-center text-sm">
+                    Já tem uma conta?
+                    <a href="{{ url_for('login') }}" class="text-primary hover:underline">
+                        Faça login
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">
+        <div class="absolute inset-0 bg-primary"></div>
+        <div class="relative z-20 flex items-center text-lg font-medium">
+            <i data-lucide="shield" class="mr-2 h-6 w-6"></i>
+            EPI Detection
+        </div>
+        <div class="relative z-20 mt-auto">
+            <blockquote class="space-y-2">
+                <p class="text-lg">
+                    "Junte-se à nossa plataforma para melhorar a segurança no trabalho através da detecção de EPIs com IA."
+                </p>
+                <footer class="text-sm">Equipe EPI Detection</footer>
+            </blockquote>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/imask"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    IMask(document.getElementById('cpf'), {
+        mask: '000.000.000-00'
+    });
+
+    IMask(document.getElementById('telefone'), {
+        mask: '(00) 00000-0000'
+    });
+
+    const form = document.getElementById('registerForm');
+    form.addEventListener('submit', function(event) {
+        const senha = document.getElementById('senha').value;
+        const confirmarSenha = document.getElementById('confirmar_senha').value;
+        
+        if (senha !== confirmarSenha) {
+            event.preventDefault();
+            alert('As senhas não coincidem. Por favor, tente novamente.');
+        }
+    });
+});
+</script>
+{% endblock %}

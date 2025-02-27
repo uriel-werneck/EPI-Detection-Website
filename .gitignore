@@ -2,3 +2,5 @@
 static/results/
 static/txt/
 static/uploads/
+_pycache_/
+*.pyc
