@@ -1,0 +1,94 @@
+{% extends "auth/auth.base.html" %}
+
+{% block title %}Login - EPI Detection{% endblock %}
+
+{% block content %}
+<div class="container relative min-h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
+    <div class="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">
+        <div class="absolute inset-0 bg-primary"></div>
+        <div class="relative z-20 flex items-center text-lg font-medium">
+            <i data-lucide="shield" class="mr-2 h-6 w-6"></i>
+            EPI Detection
+        </div>
+        <div class="relative z-20 mt-auto">
+            <blockquote class="space-y-2">
+                <p class="text-lg">
+                    "Esta plataforma revolucionou como monitoramos e garantimos a conformidade com EPIs em nosso local de trabalho."
+                </p>
+                <footer class="text-sm">Sofia Davis, Gerente de Segurança</footer>
+            </blockquote>
+        </div>
+    </div>
+    <div class="lg:p-8">
+        <div class="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+            <div class="flex flex-col space-y-2 text-center">
+                <h1 class="text-2xl font-semibold tracking-tight">Bem-vindo de volta</h1>
+                <p class="text-sm text-muted-foreground">
+                    Digite suas credenciais para acessar sua conta
+                </p>
+            </div>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="p-3 rounded-md {% if category == 'error' %}bg-destructive/15 text-destructive{% else %}bg-primary/15 text-primary{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            <div class="grid gap-6">
+                <form method="POST" action="{{ url_for('login') }}">
+                    <div class="grid gap-4">
+                        <div class="grid gap-2">
+                            <label for="email" class="text-sm font-medium">Email</label>
+                            <input
+                                id="email"
+                                name="email"
+                                placeholder="nome@exemplo.com"
+                                type="email"
+                                required
+                                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            />
+                        </div>
+                        <div class="grid gap-2">
+                            <label for="password" class="text-sm font-medium">Senha</label>
+                            <input
+                                id="password"
+                                name="password"
+                                type="password"
+                                required
+                                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            />
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <input 
+                                    type="checkbox" 
+                                    id="remember" 
+                                    name="remember" 
+                                    class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                />
+                                <label for="remember" class="text-sm font-medium leading-none">
+                                    Lembrar-me
+                                </label>
+                            </div>
+                            <a href="#" class="text-sm font-medium text-primary hover:underline">
+                                Esqueceu a senha?
+                            </a>
+                        </div>
+                        <button type="submit" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
+                            Entrar
+                        </button>
+                    </div>
+                </form>
+                <div class="text-center text-sm">
+                    Não tem uma conta?
+                    <a href="{{ url_for('register') }}" class="text-primary hover:underline">
+                        Cadastre-se
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

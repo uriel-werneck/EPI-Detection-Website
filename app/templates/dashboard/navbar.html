@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}EPI Detection{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: 'hsl(24 96% 53%)',
+                        background: 'hsl(0 0% 100%)',
+                        foreground: 'hsl(222.2 84% 4.9%)',
+                        muted: 'hsl(210 40% 96.1%)',
+                        'primary-foreground': 'hsl(210 40% 98%)',
+                    },
+                    borderRadius: {
+                        lg: '0.5rem',
+                        md: 'calc(0.5rem - 2px)',
+                        sm: 'calc(0.5rem - 4px)',
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://unpkg.com/lucide-icons/dist/umd/lucide.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
+    {% block styles %}{% endblock %}
+</head>
+<body class="bg-background text-foreground min-h-screen flex flex-col">
+    <nav class="border-b bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center gap-2">
+                        <i data-lucide="shield" class="h-8 w-8 text-primary"></i>
+                        <span class="text-xl font-bold text-[#f96a2e]">SafetyAI</span>
+                    </a>
+                    
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-4">
+                        <a href="/home" class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 {% if request.endpoint == 'home' %}bg-primary/10 text-primary{% else %}text-gray-600 hover:bg-gray-100{% endif %}">
+                            <i data-lucide="home" class="h-4 w-4"></i>
+                            Dashboard
+                        </a>
+
+                        <div class="relative group" x-data="{ isOpen: false }">
+                        <button 
+                            @mouseenter="isOpen = true"
+                            class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 {% if 'upload' in request.path %}bg-primary/10 text-primary{% else %}text-gray-600 hover:bg-gray-100{% endif %}"
+                        >
+                            <i data-lucide="upload" class="h-4 w-4"></i>
+                            Upload
+                            <i data-lucide="chevron-down" class="h-4 w-4"></i>
+                        </button>
+                        
+                        <div 
+                            @mouseenter="isOpen = true"
+                            @mouseleave="isOpen = false"
+                            x-show="isOpen"
+                            class="absolute left-0 mt-1 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+                        >
+                            <div class="py-1">
+                                <a 
+                                    href="{{ url_for('upload', type='upload-imagem') }}" 
+                                    class="block px-4 py-2 text-sm hover:bg-gray-100 {% if request.path == url_for('upload', type='upload-imagem') %}bg-primary/10 text-primary{% else %}text-gray-700{% endif %}"
+                                >
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="image" class="h-4 w-4"></i>
+                                        Upload de Imagem
+                                    </div>
+                                </a>
+                                <a 
+                                    href="{{ url_for('upload', type='upload-video') }}" 
+                                    class="block px-4 py-2 text-sm hover:bg-gray-100 {% if request.path == url_for('upload', type='upload-video') %}bg-primary/10 text-primary{% else %}text-gray-700{% endif %}"
+                                >
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="video" class="h-4 w-4"></i>
+                                        Upload de Vídeo
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                        <a href="/relatorios" class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 {% if request.endpoint == 'relatorios' %}bg-primary/10 text-primary{% else %}text-gray-600 hover:bg-gray-100{% endif %}">
+                            <i data-lucide="file-bar-chart" class="h-4 w-4"></i>
+                            Relatórios
+                        </a>
+                    </div>
+                </div>
+  
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow flex items-center justify-center">
+        <div class="w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
