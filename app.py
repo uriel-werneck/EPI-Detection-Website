@@ -3,13 +3,11 @@ import os
 from werkzeug.security import generate_password_hash
 from database import db, init_db, User
 
-app = Flask(__name__)
-init_db(app)
-
 template_dir = os.path.abspath('app/templates')
 static_dir = os.path.abspath('app/static')
 
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
+init_db(app)
 
 @app.route("/home")
 def home():
@@ -33,7 +31,7 @@ def login():
         email = request.form.get('email')
         senha = request.form.get('senha')
         # ...lógica de autenticação 
-        return render_template("home.html")  
+        return redirect(url_for('home'))
     return render_template("auth/login.html")
 
 def can_register(email: str, senha: str, confirmar_senha: str) -> bool:
@@ -64,7 +62,8 @@ def register():
             db.session.add(new_user)
             db.session.commit()
             print('Usuário registrado com sucesso!')
-            return render_template("login.html")  
+            return redirect(url_for('login'))
+        
     return render_template("auth/register.html")
 
 if __name__ == '__main__':
