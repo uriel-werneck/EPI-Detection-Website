@@ -36,17 +36,17 @@
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
                     <a href="/" class="flex items-center gap-2">
-                        <i data-lucide="shield" class="h-8 w-8 text-primary"></i>
-                        <span class="text-xl font-bold text-[#f96a2e]">SafetyAI</span>
+                        <img src="{{ url_for('static', filename='images/logo-projeto.svg') }}" alt="SafetyAI Logo" class="h-10 w-auto" />                   
                     </a>
-                    
-                    <div class="hidden sm:ml-6 sm:flex sm:space-x-4">
-                        <a href="/home" class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 {% if request.endpoint == 'home' %}bg-primary/10 text-primary{% else %}text-gray-600 hover:bg-gray-100{% endif %}">
-                            <i data-lucide="home" class="h-4 w-4"></i>
-                            Dashboard
-                        </a>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <a href="/home" class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 {% if request.endpoint == 'home' %}bg-primary/10 text-primary{% else %}text-gray-600 hover:bg-gray-100{% endif %}">
+                        <i data-lucide="home" class="h-4 w-4"></i>
+                        Dashboard
+                    </a>
 
-                        <div class="relative group" x-data="{ isOpen: false }">
+                    <div class="relative" x-data="{ isOpen: false }">
                         <button 
                             @mouseenter="isOpen = true"
                             class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 {% if 'upload' in request.path %}bg-primary/10 text-primary{% else %}text-gray-600 hover:bg-gray-100{% endif %}"
@@ -60,7 +60,7 @@
                             @mouseenter="isOpen = true"
                             @mouseleave="isOpen = false"
                             x-show="isOpen"
-                            class="absolute left-0 mt-1 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+                            class="absolute right-0 mt-1 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
                         >
                             <div class="py-1">
                                 <a 
@@ -85,13 +85,20 @@
                         </div>
                     </div>
 
-                        <a href="/relatorios" class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 {% if request.endpoint == 'relatorios' %}bg-primary/10 text-primary{% else %}text-gray-600 hover:bg-gray-100{% endif %}">
-                            <i data-lucide="file-bar-chart" class="h-4 w-4"></i>
-                            Relatórios
-                        </a>
-                    </div>
+                    <a href="/relatorios" class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 {% if request.endpoint == 'relatorios' %}bg-primary/10 text-primary{% else %}text-gray-600 hover:bg-gray-100{% endif %}">
+                        <i data-lucide="file-bar-chart" class="h-4 w-4"></i>
+                        Relatórios
+                    </a>
                 </div>
-  
+                
+                <div class="flex items-center">
+                    <form action="{{ url_for('logout') }}" method="post" class="inline-flex items-center">
+                        <button type="submit" class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 text-gray-600 hover:bg-gray-100">
+                            <i data-lucide="log-out" class="h-4 w-4"></i>
+                            Logout
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </nav>

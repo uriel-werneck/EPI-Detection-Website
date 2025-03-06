@@ -28,10 +28,7 @@
     <header id="header" class="sticky top-0 z-50 w-full transition-all duration-300 bg-white shadow-sm">
         <div class="container mx-auto flex h-16 items-center justify-between px-4">
             <div class="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f96a2e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-8 w-8">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path>
-                </svg>
-                <span class="text-xl font-bold text-[#f96a2e]">SafetyAI</span>
+                <img src="{{ url_for('static', filename='images/logo-projeto.svg') }}" alt="SafetyAI Logo" class="h-10 w-auto" /> 
             </div>
             <nav class="hidden md:flex items-center space-x-6">
                 <a href="#features" class="text-gray-700 hover:text-[#f96a2e] transition-colors">Recursos</a>
