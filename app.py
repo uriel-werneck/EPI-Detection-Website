@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, url_for, redirect, flash
+from flask import Flask, render_template, request, url_for, redirect, flash, session
 import os
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -46,9 +46,13 @@ def login():
         
         if user and check_password_hash(user.senha, senha):
             login_user(user)
+            session['user_id'] = user.id
             return redirect(url_for('home'))
         else:
             flash('Email ou senha incorretos', 'error')
+    
+    if 'user_id' in session:
+        return redirect(url_for('home'))
     
     return render_template("auth/login.html")
 
@@ -56,6 +60,7 @@ def login():
 @login_required
 def logout():
     logout_user()
+    session.pop('user_id', None)
     return redirect(url_for('index'))
 
 def can_register(email: str, senha: str, confirmar_senha: str) -> bool:
@@ -87,6 +92,9 @@ def register():
             db.session.commit()
             flash('Usuário registrado com sucesso!', 'success')
             return redirect(url_for('login'))
+    
+    if 'user_id' in session:
+        return redirect(url_for('home'))
         
     return render_template("auth/register.html")
 
