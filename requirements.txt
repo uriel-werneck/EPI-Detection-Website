@@ -48,4 +48,5 @@ tzdata==2024.2
 ultralytics==8.3.38
 ultralytics-thop==2.0.12
 urllib3==2.2.3
+validate-docbr==1.10.0
 Werkzeug==3.1.3
