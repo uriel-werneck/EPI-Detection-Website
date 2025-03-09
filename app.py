@@ -3,6 +3,9 @@ import os
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from database import db, init_db, User
+from validate_docbr import CPF
+
+cpf_validator = CPF() # validador de cpf
 
 template_dir = os.path.abspath('app/templates')
 static_dir = os.path.abspath('app/static')
@@ -63,12 +66,22 @@ def logout():
     session.pop('user_id', None)
     return redirect(url_for('index'))
 
-def can_register(email: str, senha: str, confirmar_senha: str) -> bool:
+def can_register(email: str, senha: str, confirmar_senha: str, cpf: str) -> bool:
     '''verifica se os dados para registrar a conta estão corretos'''
     user_with_email = User.query.filter_by(email=email).first()
     if user_with_email:
         flash('Já existe um usuário com esse email!', 'error')
         return False
+    
+    if not cpf_validator.validate(cpf):
+        flash('CPF inválido!', 'error')
+        return False
+    
+    user_with_cpf = User.query.filter_by(cpf=cpf).first()
+    if user_with_cpf:
+        flash('Já existe um usuário com esse CPF!')
+        return False
+    
     if senha != confirmar_senha:
         flash('Senhas não coincidem!', 'error')
         return False
@@ -85,7 +98,7 @@ def register():
         senha = request.form.get('senha')
         confirmar_senha = request.form.get('confirmar_senha')
 
-        if can_register(email, senha, confirmar_senha):
+        if can_register(email, senha, confirmar_senha, cpf):
             hash_password = generate_password_hash(senha)
             new_user = User(nome=nome, sobrenome=sobrenome, cpf=cpf, telefone=telefone, email=email, senha=hash_password)
             db.session.add(new_user)
