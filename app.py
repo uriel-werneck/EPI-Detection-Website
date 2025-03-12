@@ -4,6 +4,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from database import db, init_db, User
 from validate_docbr import CPF
+import numpy as np
+import cv2 as cv
+from ultralytics import YOLO
+
+model = YOLO(r'C:\Users\uriel\Área de Trabalho\EPI-Detection-Website\app\static\model\yolov8s_custom.pt')
 
 cpf_validator = CPF() # validador de cpf
 
@@ -27,14 +32,40 @@ def load_user(user_id):
 def home():
     return render_template("dashboard/home.html")
 
-@app.route('/dashboard/upload/<type>')
+@app.route('/dashboard/upload/<type>', methods=['GET', 'POST'])
 @login_required
 def upload(type):
-    if type == 'upload-imagem':
+    if request.method == 'GET':
+        if type == 'upload-imagem':
+            return render_template('dashboard/upload/upload-imagem.html')
+        elif type == 'upload-video':
+            return render_template('dashboard/upload/upload-video.html')
+        
+    file = request.files.get('image')
+    if file and file.name:
+        file_bytes = np.frombuffer(file.read(), np.uint8)
+        image = cv.imdecode(file_bytes, cv.IMREAD_COLOR)
+
+        result = model.predict(image, verbose=False)[0]
+        classes_map = result.names
+        boxes = result.boxes
+        classes_list = boxes.cls.int().tolist()
+        confidence_list = [float(f'{conf:.2f}') for conf in boxes.conf.tolist()]
+        # creating text
+        file_text = ['class;confidence\n']
+        for class_id, conf in zip(classes_list, confidence_list):
+            file_text.append(f'{classes_map[class_id]};{conf}\n')
+        file_text[-1] = file_text[-1].removesuffix('\n')
+
+        # salvar dados no banco de dados com id do usuário
+        print(file_text)
+    
+    if type == 'image':
+        # passar o path da imagem (s) como parâmetro
         return render_template('dashboard/upload/upload-imagem.html')
-    elif type == 'upload-video':
+    elif type == 'video':
         return render_template('dashboard/upload/upload-video.html')
-    return redirect(url_for('home'))
+    # return redirect(url_for('home'))
 
 @app.route('/')
 def index():
