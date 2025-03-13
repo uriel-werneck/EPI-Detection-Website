@@ -2,13 +2,14 @@ from flask import Flask, render_template, request, url_for, redirect, flash, ses
 import os
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from database import db, init_db, User
+from database import db, init_db, User, Detection
 from validate_docbr import CPF
 import numpy as np
 import cv2 as cv
 from ultralytics import YOLO
+from functions_detect import process_image_with_yolo, process_video_with_classes
 
-model = YOLO(r'C:\Users\uriel\Área de Trabalho\EPI-Detection-Website\app\static\model\yolov8s_custom.pt')
+model = YOLO(os.path.join('app', 'static', 'model', 'yolov8s_custom.pt'))
 
 cpf_validator = CPF() # validador de cpf
 
@@ -40,32 +41,35 @@ def upload(type):
             return render_template('dashboard/upload/upload-imagem.html')
         elif type == 'upload-video':
             return render_template('dashboard/upload/upload-video.html')
-        
-    file = request.files.get('image')
-    if file and file.name:
-        file_bytes = np.frombuffer(file.read(), np.uint8)
-        image = cv.imdecode(file_bytes, cv.IMREAD_COLOR)
-
-        result = model.predict(image, verbose=False)[0]
-        classes_map = result.names
-        boxes = result.boxes
-        classes_list = boxes.cls.int().tolist()
-        confidence_list = [float(f'{conf:.2f}') for conf in boxes.conf.tolist()]
-        # creating text
-        file_text = ['class;confidence\n']
-        for class_id, conf in zip(classes_list, confidence_list):
-            file_text.append(f'{classes_map[class_id]};{conf}\n')
-        file_text[-1] = file_text[-1].removesuffix('\n')
-
-        # salvar dados no banco de dados com id do usuário
-        print(file_text)
     
-    if type == 'image':
-        # passar o path da imagem (s) como parâmetro
-        return render_template('dashboard/upload/upload-imagem.html')
-    elif type == 'video':
-        return render_template('dashboard/upload/upload-video.html')
-    # return redirect(url_for('home'))
+    file = request.files.get('image') if type == 'upload-imagem' else request.files.get('video')
+    if file and file.filename:
+        file_bytes = file.read()
+        if type == 'upload-imagem':
+            image = cv.imdecode(np.frombuffer(file_bytes, np.uint8), cv.IMREAD_COLOR)
+            class_names = process_image_with_yolo(image)
+        elif type == 'upload-video':
+            class_names = process_video_with_classes(file_bytes)
+
+        if class_names:
+            # Save detection data in the database with user id
+            detection = Detection(
+                user_id=current_user.id,  # Relate detection to the logged-in user
+                file_name=file.filename,
+                detection_data=','.join(class_names),
+                upload_type=type,
+                quantity=len(class_names),
+                detected_classes=','.join(class_names)
+            )
+            db.session.add(detection)
+            db.session.commit()
+            flash('Upload and processing completed successfully!', 'success')
+        else:
+            flash('No classes detected in the image.', 'warning')
+    else:
+        flash('No file selected or invalid file.', 'error')
+
+    return redirect(url_for('home'))
 
 @app.route('/')
 def index():
@@ -83,7 +87,7 @@ def login():
             session['user_id'] = user.id
             return redirect(url_for('home'))
         else:
-            flash('Email ou senha incorretos', 'error')
+            flash('Incorrect email or password', 'error')
     
     if 'user_id' in session:
         return redirect(url_for('home'))
