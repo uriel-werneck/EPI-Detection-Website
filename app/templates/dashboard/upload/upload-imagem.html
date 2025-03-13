@@ -35,6 +35,13 @@
                 Enviar Imagem
             </button>
         </form>
+
+        {% if processed_image %}
+        <div class="mt-8">
+            <h2 class="text-xl font-bold mb-4">Resultado da Análise</h2>
+            <img src="{{ url_for('static', filename='results/' + processed_image) }}" alt="Processed Image" class="max-w-full">
+        </div>
+        {% endif %}
     </div>
 </div>
 

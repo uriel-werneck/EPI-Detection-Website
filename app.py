@@ -7,22 +7,28 @@ from validate_docbr import CPF
 import numpy as np
 import cv2 as cv
 from ultralytics import YOLO
-from functions_detect import process_image_with_yolo, process_video_with_classes
+from functions_detect import process_image_with_yolo, draw_bounding_boxes  
 
 model = YOLO(os.path.join('app', 'static', 'model', 'yolov8s_custom.pt'))
 
-cpf_validator = CPF() # validador de cpf
+cpf_validator = CPF()  
 
 template_dir = os.path.abspath('app/templates')
 static_dir = os.path.abspath('app/static')
 
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
-app.secret_key = 'your_secret_key_here'  
+app.secret_key = 'your_secret_key_here'
+app.config['UPLOAD_FOLDER'] = os.path.join(static_dir, 'uploads')
+app.config['RESULTS_FOLDER'] = os.path.join(static_dir, 'results')
+
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+os.makedirs(app.config['RESULTS_FOLDER'], exist_ok=True)
+
 init_db(app)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login'  
+login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -41,35 +47,40 @@ def upload(type):
             return render_template('dashboard/upload/upload-imagem.html')
         elif type == 'upload-video':
             return render_template('dashboard/upload/upload-video.html')
-    
+
     file = request.files.get('image') if type == 'upload-imagem' else request.files.get('video')
     if file and file.filename:
         file_bytes = file.read()
         if type == 'upload-imagem':
             image = cv.imdecode(np.frombuffer(file_bytes, np.uint8), cv.IMREAD_COLOR)
-            class_names = process_image_with_yolo(image)
-        elif type == 'upload-video':
-            class_names = process_video_with_classes(file_bytes)
+            class_names, boxes = process_image_with_yolo(image)  
 
-        if class_names:
-            # Save detection data in the database with user id
-            detection = Detection(
-                user_id=current_user.id,  # Relate detection to the logged-in user
-                file_name=file.filename,
-                detection_data=','.join(class_names),
-                upload_type=type,
-                quantity=len(class_names),
-                detected_classes=','.join(class_names)
-            )
-            db.session.add(detection)
-            db.session.commit()
-            flash('Upload and processing completed successfully!', 'success')
+            if class_names:
+                image_with_boxes = draw_bounding_boxes(image, boxes, class_names)
+                result_filename = f"processed_{file.filename}"
+                result_path = os.path.join(app.config['RESULTS_FOLDER'], result_filename)
+                cv.imwrite(result_path, image_with_boxes)
+
+                detection = Detection(
+                    user_id=current_user.id,
+                    file_name=file.filename,
+                    detection_data=','.join(class_names),
+                    upload_type=type,
+                    quantity=len(class_names),
+                    detected_classes=','.join(class_names)
+                )
+                db.session.add(detection)
+                db.session.commit()
+
+                return render_template('dashboard/upload/upload-imagem.html', processed_image=result_filename)
+            else:
+                flash('Nenhuma classe detectada na imagem.', 'warning')
         else:
-            flash('No classes detected in the image.', 'warning')
+            flash('Tipo de upload não suportado.', 'error')
     else:
-        flash('No file selected or invalid file.', 'error')
+        flash('Nenhum arquivo selecionado ou arquivo inválido.', 'error')
 
-    return redirect(url_for('home'))
+    return redirect(url_for('upload', type=type))
 
 @app.route('/')
 def index():
@@ -102,7 +113,6 @@ def logout():
     return redirect(url_for('index'))
 
 def can_register(email: str, senha: str, confirmar_senha: str, cpf: str) -> bool:
-    '''verifica se os dados para registrar a conta estão corretos'''
     user_with_email = User.query.filter_by(email=email).first()
     if user_with_email:
         flash('Já existe um usuário com esse email!', 'error')
