@@ -8,7 +8,7 @@
         <h1 class="text-3xl font-bold tracking-tight mb-4">Upload de Imagem</h1>
         <p class="text-muted-foreground mb-8">Faça upload de uma imagem para análise de EPIs</p>
 
-        <form action="{{ url_for('upload', type='image') }}" method="post" enctype="multipart/form-data" class="space-y-6">
+        <form action="{{ url_for('upload', type='upload-imagem') }}" method="post" enctype="multipart/form-data" class="space-y-6">
             <div class="border-2 border-dashed rounded-lg p-8 text-center">
                 <input type="file" 
                        id="image-upload" 
@@ -35,6 +35,13 @@
                 Enviar Imagem
             </button>
         </form>
+
+        {% if processed_image %}
+        <div class="mt-8">
+            <h2 class="text-xl font-bold mb-4">Resultado da Análise</h2>
+            <img src="{{ url_for('static', filename='results/' + processed_image) }}" alt="Processed Image" class="max-w-full">
+        </div>
+        {% endif %}
     </div>
 </div>
 

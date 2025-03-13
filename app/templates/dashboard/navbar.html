@@ -73,8 +73,8 @@
                                     </div>
                                 </a>
                                 <a 
-                                    href="{{ url_for('upload', type='upload-video') }}" 
-                                    class="block px-4 py-2 text-sm hover:bg-gray-100 {% if request.path == url_for('upload', type='upload-video') %}bg-primary/10 text-primary{% else %}text-gray-700{% endif %}"
+                                    class="block px-4 py-2 text-sm hover:bg-gray-100 text-gray-400 cursor-not-allowed"
+                                    aria-disabled="true"
                                 >
                                     <div class="flex items-center gap-2">
                                         <i data-lucide="video" class="h-4 w-4"></i>
