@@ -4,211 +4,97 @@
 
 {% block content %}
 <div class="container py-8 max-w-7xl">
-    <!-- Header -->
     <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
             <h1 class="text-3xl font-bold tracking-tight">Dashboard</h1>
             <p class="text-muted-foreground">Bem-vindo ao seu painel de controle de EPIs</p>
         </div>
-        <div class="flex items-center gap-2">
-            <a href="/upload" class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
-                <i data-lucide="upload" class="h-4 w-4 mr-2"></i>
-                Nova Análise
-            </a>
-            <button class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
-                <i data-lucide="download" class="h-4 w-4 mr-2"></i>
-                Exportar Relatório
-            </button>
-        </div>
     </div>
 
-    <!-- Stats Grid -->
-    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-8">
-        <!-- Total de Análises -->
+    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-2 mt-8">
         <div class="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
             <div class="flex flex-row items-center justify-between space-y-0 pb-2">
-                <h3 class="text-sm font-medium">Total de Análises</h3>
+                <h3 class="text-sm font-medium">Total de Imagens Detectadas</h3>
                 <i data-lucide="camera" class="h-4 w-4 text-muted-foreground"></i>
             </div>
-            <div class="text-2xl font-bold">2,345</div>
-            <p class="text-xs text-muted-foreground">+20.1% em relação ao mês anterior</p>
+            <div class="text-2xl font-bold">{{ detection_stats.total_images }}</div>
         </div>
 
-        <!-- Taxa de Conformidade -->
         <div class="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
             <div class="flex flex-row items-center justify-between space-y-0 pb-2">
-                <h3 class="text-sm font-medium">Taxa de Conformidade</h3>
-                <i data-lucide="check-circle" class="h-4 w-4 text-muted-foreground"></i>
+                <h3 class="text-sm font-medium">Total de Classes Detectadas</h3>
+                <i data-lucide="list" class="h-4 w-4 text-muted-foreground"></i>
             </div>
-            <div class="text-2xl font-bold">89.3%</div>
-            <p class="text-xs text-muted-foreground">+2.4% em relação ao mês anterior</p>
-        </div>
-
-        <!-- Alertas Ativos -->
-        <div class="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
-            <div class="flex flex-row items-center justify-between space-y-0 pb-2">
-                <h3 class="text-sm font-medium">Alertas Ativos</h3>
-                <i data-lucide="alert-triangle" class="h-4 w-4 text-muted-foreground"></i>
-            </div>
-            <div class="text-2xl font-bold">23</div>
-            <p class="text-xs text-muted-foreground">-5 em relação ao mês anterior</p>
-        </div>
-
-        <!-- EPIs Detectados -->
-        <div class="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
-            <div class="flex flex-row items-center justify-between space-y-0 pb-2">
-                <h3 class="text-sm font-medium">EPIs Detectados</h3>
-                <i data-lucide="hard-hat" class="h-4 w-4 text-muted-foreground"></i>
-            </div>
-            <div class="text-2xl font-bold">5,789</div>
-            <p class="text-xs text-muted-foreground">+12.3% em relação ao mês anterior</p>
+            <div class="text-2xl font-bold">{{ detection_stats.detected_classes | length }}</div>
         </div>
     </div>
 
-    <!-- Recent Activity and Charts -->
-    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-7 mt-4">
-        <!-- Recent Activity -->
-        <div class="col-span-full lg:col-span-4 rounded-lg border bg-card text-card-foreground shadow-sm">
-            <div class="flex flex-row items-center justify-between space-y-0 p-6">
-                <h3 class="text-lg font-medium">Atividade Recente</h3>
-                <button class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8">
-                    <i data-lucide="more-horizontal" class="h-4 w-4"></i>
-                </button>
-            </div>
-            <div class="p-6 pt-0">
-                <div class="space-y-8">
-                    <div class="flex items-center">
-                        <div class="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary">
-                            <i data-lucide="alert-circle" class="h-4 w-4"></i>
-                        </div>
-                        <div class="ml-4 space-y-1">
-                            <p class="text-sm font-medium">Alerta de não conformidade detectado</p>
-                            <p class="text-sm text-muted-foreground">Área de Produção - Setor 3</p>
-                        </div>
-                        <div class="ml-auto text-sm text-muted-foreground">
-                            Há 5 min
-                        </div>
-                    </div>
-                    <div class="flex items-center">
-                        <div class="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary">
-                            <i data-lucide="check-circle" class="h-4 w-4"></i>
-                        </div>
-                        <div class="ml-4 space-y-1">
-                            <p class="text-sm font-medium">Análise completa realizada</p>
-                            <p class="text-sm text-muted-foreground">15 imagens processadas</p>
-                        </div>
-                        <div class="ml-auto text-sm text-muted-foreground">
-                            Há 15 min
-                        </div>
-                    </div>
-                    <div class="flex items-center">
-                        <div class="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary">
-                            <i data-lucide="upload" class="h-4 w-4"></i>
-                        </div>
-                        <div class="ml-4 space-y-1">
-                            <p class="text-sm font-medium">Novo lote de imagens enviado</p>
-                            <p class="text-sm text-muted-foreground">Área de Manutenção</p>
-                        </div>
-                        <div class="ml-auto text-sm text-muted-foreground">
-                            Há 1 hora
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Compliance Chart -->
-        <div class="col-span-full lg:col-span-3 rounded-lg border bg-card text-card-foreground shadow-sm">
-            <div class="flex flex-row items-center justify-between space-y-0 p-6">
-                <h3 class="text-lg font-medium">Taxa de Conformidade</h3>
-                <button class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8">
-                    <i data-lucide="more-horizontal" class="h-4 w-4"></i>
-                </button>
-            </div>
-            <div class="p-6 pt-0">
-                <div class="flex items-center justify-center h-[200px]">
-                    <!-- Placeholder for chart - you can integrate a real chart library here -->
-                    <div class="relative w-[200px] h-[200px] flex items-center justify-center">
-                        <div class="absolute inset-0 border-8 border-primary/20 rounded-full"></div>
-                        <div class="absolute inset-0 border-8 border-primary rounded-full" style="clip-path: polygon(0 0, 100% 0, 100% 89%, 0 89%);"></div>
-                        <div class="text-center">
-                            <div class="text-3xl font-bold">89.3%</div>
-                            <div class="text-sm text-muted-foreground">Conformidade</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-4 mt-4">
-                    <div class="flex items-center gap-2">
-                        <div class="h-2 w-2 rounded-full bg-primary"></div>
-                        <div class="text-sm">Conforme</div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="h-2 w-2 rounded-full bg-primary/20"></div>
-                        <div class="text-sm">Não Conforme</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Recent Detections -->
-    <div class="rounded-lg border bg-card text-card-foreground shadow-sm mt-4">
-        <div class="flex flex-row items-center justify-between space-y-0 p-6">
-            <h3 class="text-lg font-medium">Detecções Recentes</h3>
-            <button class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3">
-                Ver todas
-            </button>
-        </div>
-        <div class="p-0">
-            <div class="relative w-full overflow-auto">
-                <table class="w-full caption-bottom text-sm">
-                    <thead class="[&_tr]:border-b">
-                        <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                            <th class="h-12 px-6 text-left align-middle font-medium text-muted-foreground">ID</th>
-                            <th class="h-12 px-6 text-left align-middle font-medium text-muted-foreground">Área</th>
-                            <th class="h-12 px-6 text-left align-middle font-medium text-muted-foreground">EPIs Detectados</th>
-                            <th class="h-12 px-6 text-left align-middle font-medium text-muted-foreground">Status</th>
-                            <th class="h-12 px-6 text-left align-middle font-medium text-muted-foreground">Data</th>
-                            <th class="h-12 px-6 text-left align-middle font-medium text-muted-foreground">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody class="[&_tr:last-child]:border-0">
-                        <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                            <td class="p-6 align-middle">#4321</td>
-                            <td class="p-6 align-middle">Área de Produção</td>
-                            <td class="p-6 align-middle">Capacete, Luvas, Óculos</td>
-                            <td class="p-6 align-middle">
-                                <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary/10 text-primary hover:bg-primary/20">
-                                    Conforme
-                                </div>
-                            </td>
-                            <td class="p-6 align-middle">Há 5 minutos</td>
-                            <td class="p-6 align-middle">
-                                <button class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8">
-                                    <i data-lucide="more-horizontal" class="h-4 w-4"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                            <td class="p-6 align-middle">#4320</td>
-                            <td class="p-6 align-middle">Área de Manutenção</td>
-                            <td class="p-6 align-middle">Capacete, Protetor Auricular</td>
-                            <td class="p-6 align-middle">
-                                <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-destructive/10 text-destructive hover:bg-destructive/20">
-                                    Não Conforme
-                                </div>
-                            </td>
-                            <td class="p-6 align-middle">Há 15 minutos</td>
-                            <td class="p-6 align-middle">
-                                <button class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8">
-                                    <i data-lucide="more-horizontal" class="h-4 w-4"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <div class="rounded-lg border bg-card text-card-foreground shadow-sm mt-4 p-6">
+        <h3 class="text-lg font-medium">Distribuição de Classes Detectadas</h3>
+        <canvas id="classesChart" width="400" height="300"></canvas>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    const detectedClasses = {{ detection_stats.detected_classes | tojson }};
+    console.log("Detected Classes (Filtered):", detectedClasses);
+</script>
+
+<script>
+    const classesCtx = document.getElementById('classesChart');
+    if (!classesCtx) {
+        console.error("Canvas element not found!");
+    } else {
+        console.log("Canvas element found:", classesCtx);
+    }
+
+    const classesChart = new Chart(classesCtx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(detectedClasses),
+            datasets: [{
+                label: 'Quantidade de Detecções',
+                data: Object.values(detectedClasses),
+                backgroundColor: Object.keys(detectedClasses).map((cls, index) => 
+                    index === 0 ? '#3B82F6' :  
+                    index === Object.keys(detectedClasses).length - 1 ? '#FF5252' :  
+                    '#4CAF50'  
+                ),
+            }]
+        },
+        options: {
+            responsive: false,  
+            maintainAspectRatio: false,  
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Quantidade de Detecções'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Classes Detectadas'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.label}: ${context.raw} detecções`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
 {% endblock %}

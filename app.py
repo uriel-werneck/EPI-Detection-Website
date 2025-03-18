@@ -8,6 +8,7 @@ import numpy as np
 import cv2 as cv
 from ultralytics import YOLO
 from functions_detect import process_image_with_yolo, draw_bounding_boxes  
+from functions_detect import TRANSLATIONS
 
 model = YOLO(os.path.join('app', 'static', 'model', 'yolov8s_custom.pt'))
 
@@ -37,7 +38,23 @@ def load_user(user_id):
 @app.route("/home")
 @login_required
 def home():
-    return render_template("dashboard/home.html")
+    detections = Detection.query.filter_by(user_id=current_user.id).all()
+
+    detection_stats = {
+        "total_images": len(detections),  
+        "detected_classes": get_detected_classes(detections),  
+    }
+
+    return render_template("dashboard/home.html", detection_stats=detection_stats)
+
+def get_detected_classes(detections):
+    class_counts = {}
+    for detection in detections:
+        classes = detection.detected_classes.split(',')
+        for cls in classes:
+            if cls in TRANSLATIONS.values():
+                class_counts[cls] = class_counts.get(cls, 0) + 1
+    return class_counts
 
 @app.route('/dashboard/upload/<type>', methods=['GET', 'POST'])
 @login_required
