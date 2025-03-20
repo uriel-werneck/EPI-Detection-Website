@@ -9,76 +9,111 @@
             <h1 class="text-3xl font-bold tracking-tight">Dashboard</h1>
             <p class="text-muted-foreground">Bem-vindo ao seu painel de controle de EPIs</p>
         </div>
+        <div class="flex items-center">
+            <button class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 text-gray-600 hover:bg-gray-100 border">
+                <i data-lucide="filter" class="h-4 w-4"></i>
+                Filtrar Objetos
+            </button>
+        </div>
     </div>
 
+    <!-- Upload Statistics Cards -->
     <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-2 mt-8">
-        <div class="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm p-6 bg-purple-100">
             <div class="flex flex-row items-center justify-between space-y-0 pb-2">
-                <h3 class="text-sm font-medium">Total de Imagens Detectadas</h3>
-                <i data-lucide="camera" class="h-4 w-4 text-muted-foreground"></i>
+                <h3 class="text-sm font-medium">Uploads de Imagens</h3>
+                <i data-lucide="image" class="h-4 w-4 text-muted-foreground"></i>
             </div>
-            <div class="text-2xl font-bold">{{ detection_stats.total_images }}</div>
+            <div class="text-2xl font-bold text-purple-700">{{ detection_stats.total_images }}</div>
         </div>
 
-        <div class="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm p-6 bg-green-100">
             <div class="flex flex-row items-center justify-between space-y-0 pb-2">
-                <h3 class="text-sm font-medium">Total de Classes Detectadas</h3>
-                <i data-lucide="list" class="h-4 w-4 text-muted-foreground"></i>
+                <h3 class="text-sm font-medium">Uploads de Vídeos</h3>
+                <i data-lucide="video" class="h-4 w-4 text-muted-foreground"></i>
             </div>
-            <div class="text-2xl font-bold">{{ detection_stats.detected_classes | length }}</div>
+            <div class="text-2xl font-bold text-green-700">{{ detection_stats.video_count|default(0) }}</div>
         </div>
     </div>
 
-    <div class="rounded-lg border bg-card text-card-foreground shadow-sm mt-4 p-6">
-        <h3 class="text-lg font-medium">Distribuição de Classes Detectadas</h3>
-        <canvas id="classesChart" width="400" height="300"></canvas>
+    <!-- Main Charts Grid -->
+    <div class="grid gap-6 md:grid-cols-2 mt-8">
+        <!-- Bar Chart -->
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
+            <h3 class="text-lg font-medium mb-4">Quantidade de Objetos Detectados</h3>
+            <div class="h-[300px]">
+                <canvas id="classesChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Pie Chart -->
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
+            <h3 class="text-lg font-medium mb-4">Distribuição dos Objetos</h3>
+            <div class="h-[300px]">
+                <canvas id="distributionChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Time Series Chart -->
+    <div class="rounded-lg border bg-card text-card-foreground shadow-sm mt-6 p-6">
+        <h3 class="text-lg font-medium mb-4">Evolução da Detecção de Objetos por Data</h3>
+        <div class="h-[400px]">
+            <canvas id="timeSeriesChart"></canvas>
+        </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 
 <script>
+    // Data from backend
     const detectedClasses = {{ detection_stats.detected_classes | tojson }};
-    console.log("Detected Classes (Filtered):", detectedClasses);
-</script>
-
-<script>
+    const timeSeriesData = {{ detection_stats.time_series_data | tojson }};
+    
+    // Color palette for charts
+    const colorPalette = [
+        '#4361ee', '#3a0ca3', '#7209b7', '#f72585', '#4cc9f0', 
+        '#4895ef', '#560bad', '#f15bb5', '#00bbf9', '#00f5d4'
+    ];
+    
+    // Bar Chart
     const classesCtx = document.getElementById('classesChart');
-    if (!classesCtx) {
-        console.error("Canvas element not found!");
-    } else {
-        console.log("Canvas element found:", classesCtx);
-    }
-
-    const classesChart = new Chart(classesCtx, {
+    new Chart(classesCtx, {
         type: 'bar',
         data: {
             labels: Object.keys(detectedClasses),
             datasets: [{
                 label: 'Quantidade de Detecções',
                 data: Object.values(detectedClasses),
-                backgroundColor: Object.keys(detectedClasses).map((cls, index) => 
-                    index === 0 ? '#3B82F6' :  
-                    index === Object.keys(detectedClasses).length - 1 ? '#FF5252' :  
-                    '#4CAF50'  
-                ),
+                backgroundColor: Object.keys(detectedClasses).map((_, index) => colorPalette[index % colorPalette.length]),
+                borderWidth: 0,
+                borderRadius: 4
             }]
         },
         options: {
-            responsive: false,  
-            maintainAspectRatio: false,  
+            responsive: true,
+            maintainAspectRatio: false,
             scales: {
                 y: {
                     beginAtZero: true,
                     title: {
                         display: true,
-                        text: 'Quantidade de Detecções'
+                        text: 'Quantidade'
+                    },
+                    grid: {
+                        display: true,
+                        color: 'rgba(0, 0, 0, 0.05)'
                     }
                 },
                 x: {
                     title: {
                         display: true,
-                        text: 'Classes Detectadas'
+                        text: 'Objeto'
+                    },
+                    grid: {
+                        display: false
                     }
                 }
             },
@@ -87,6 +122,9 @@
                     display: false
                 },
                 tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 10,
+                    cornerRadius: 6,
                     callbacks: {
                         label: function(context) {
                             return `${context.label}: ${context.raw} detecções`;
@@ -96,5 +134,134 @@
             }
         }
     });
+
+    // Pie Chart
+    const distributionCtx = document.getElementById('distributionChart');
+    new Chart(distributionCtx, {
+        type: 'pie',
+        data: {
+            labels: Object.keys(detectedClasses),
+            datasets: [{
+                data: Object.values(detectedClasses),
+                backgroundColor: Object.keys(detectedClasses).map((_, index) => colorPalette[index % colorPalette.length]),
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        boxWidth: 15,
+                        padding: 15,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 10,
+                    cornerRadius: 6,
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = Math.round((context.raw / total) * 100);
+                            return `${context.label}: ${percentage}%`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Time Series Chart
+    const timeSeriesCtx = document.getElementById('timeSeriesChart');
+    new Chart(timeSeriesCtx, {
+        type: 'line',
+        data: {
+            labels: timeSeriesData.dates,
+            datasets: [
+                {
+                    label: 'Objetos Detectados',
+                    data: timeSeriesData.detections,
+                    borderColor: '#4361ee',
+                    backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.3,
+                    fill: true,
+                    pointBackgroundColor: '#4361ee',
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                },
+                {
+                    label: 'Uploads de Imagens',
+                    data: timeSeriesData.uploads,
+                    borderColor: '#f72585',
+                    backgroundColor: 'rgba(247, 37, 133, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.3,
+                    fill: true,
+                    pointBackgroundColor: '#f72585',
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Quantidade'
+                    },
+                    grid: {
+                        display: true,
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Data'
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    align: 'end',
+                    labels: {
+                        boxWidth: 15,
+                        padding: 15,
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 10,
+                    cornerRadius: 6,
+                    mode: 'index',
+                    intersect: false
+                }
+            },
+            interaction: {
+                mode: 'nearest',
+                axis: 'x',
+                intersect: false
+            }
+        }
+    });
 </script>
 {% endblock %}
+
