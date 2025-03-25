@@ -12,6 +12,7 @@ from functions_detect import TRANSLATIONS
 from datetime import datetime, timedelta
 from sqlalchemy import func, text
 import json
+import math
 
 model = YOLO(os.path.join('app', 'static', 'model', 'yolov8s_custom.pt'))
 
@@ -255,6 +256,69 @@ def relatorios():
     now = datetime.now()
     
     return render_template("dashboard/relatorios.html", detection_stats=detection_stats, now=now)
+
+@app.route("/minhas-deteccoes")
+@login_required
+def minhas_deteccoes():
+    page = request.args.get('page', 1, type=int)
+    per_page = 9  
+    
+    date_filter = request.args.get('date')
+    class_filter = request.args.get('class')
+    
+    query = Detection.query.filter_by(user_id=current_user.id)
+    
+    if date_filter:
+        try:
+            filter_date = datetime.strptime(date_filter, '%Y-%m-%d')
+            query = query.filter(
+                func.date(Detection.timestamp) == filter_date.date()
+            )
+        except ValueError:
+            flash('Formato de data inválido. Use YYYY-MM-DD.', 'error')
+    
+    if class_filter:
+        query = query.filter(Detection.detected_classes.like(f'%{class_filter}%'))
+    
+    query = query.order_by(Detection.timestamp.desc())
+    
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    detections = pagination.items
+    
+    all_classes = set()
+    for detection in Detection.query.filter_by(user_id=current_user.id).all():
+        classes = detection.detected_classes.split(',')
+        all_classes.update([cls for cls in classes if cls])
+    
+    detection_data = []
+    for detection in detections:
+        processed_filename = f"processed_{detection.file_name}"
+        
+        file_path = os.path.join(app.config['RESULTS_FOLDER'], processed_filename)
+        file_exists = os.path.isfile(file_path)
+        
+        formatted_date = detection.timestamp.strftime('%d/%m/%Y %H:%M')
+        
+        classes = detection.detected_classes.split(',')
+        
+        detection_data.append({
+            'id': detection.id,
+            'filename': processed_filename,
+            'original_filename': detection.file_name,
+            'date': formatted_date,
+            'classes': classes,
+            'quantity': detection.quantity,
+            'file_exists': file_exists
+        })
+    
+    return render_template(
+        "dashboard/minhas-deteccoes.html",
+        detections=detection_data,
+        pagination=pagination,
+        all_classes=sorted(all_classes),
+        current_date_filter=date_filter,
+        current_class_filter=class_filter
+    )
 
 if __name__ == '__main__':
     app.run(debug=True)

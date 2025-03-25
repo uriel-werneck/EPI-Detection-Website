@@ -120,7 +120,7 @@
                                     <p class="text-xs text-gray-500 truncate">{{ current_user.email }}</p>
                                 </div>
                                 
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <a href="{{ url_for('minhas_deteccoes') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {% if request.endpoint == 'minhas_deteccoes' %}bg-primary/10 text-primary{% endif %}">
                                     <div class="flex items-center gap-2">
                                         <i data-lucide="list" class="h-4 w-4"></i>
                                         Minhas Detecções
@@ -156,3 +156,4 @@
     {% block scripts %}{% endblock %}
 </body>
 </html>
+
