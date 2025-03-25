@@ -198,7 +198,7 @@ def login():
 def logout():
     logout_user()
     session.pop('user_id', None)
-    return redirect(url_for('auth/login.html'))
+    return redirect(url_for('index'))
 
 def can_register(email: str, senha: str, confirmar_senha: str, cpf: str) -> bool:
     user_with_email = User.query.filter_by(email=email).first()
