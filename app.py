@@ -241,7 +241,20 @@ def register():
 @app.route("/relatorios")
 @login_required
 def relatorios():
-    return render_template("dashboard/relatorios.html")
+    detections = Detection.query.filter_by(user_id=current_user.id).all()
+    video_count = Detection.query.filter_by(user_id=current_user.id, upload_type='upload-video').count()
+    time_series_data = get_time_series_data(current_user.id)
+    
+    detection_stats = {
+        "total_images": len(detections),
+        "video_count": video_count,
+        "detected_classes": get_detected_classes(detections),
+        "time_series_data": time_series_data
+    }
+    
+    now = datetime.now()
+    
+    return render_template("dashboard/relatorios.html", detection_stats=detection_stats, now=now)
 
 if __name__ == '__main__':
     app.run(debug=True)
