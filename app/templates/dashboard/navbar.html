@@ -92,12 +92,52 @@
                 </div>
                 
                 <div class="flex items-center">
-                    <form action="{{ url_for('logout') }}" method="post" class="inline-flex items-center">
-                        <button type="submit" class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 text-gray-600 hover:bg-gray-100">
-                            <i data-lucide="log-out" class="h-4 w-4"></i>
-                            Logout
+                    <div class="relative" x-data="{ isOpen: false }">
+                        <button 
+                            @click="isOpen = !isOpen"
+                            class="flex items-center focus:outline-none"
+                            type="button"
+                        >
+                            <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center">
+                                <span class="text-sm font-medium">{{ current_user.nome[0] | upper }}</span>
+                            </div>
                         </button>
-                    </form>
+                        
+                        <div 
+                            x-show="isOpen"
+                            @click.away="isOpen = false"
+                            class="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+                            x-transition:enter="transition ease-out duration-100"
+                            x-transition:enter-start="transform opacity-0 scale-95"
+                            x-transition:enter-end="transform opacity-100 scale-100"
+                            x-transition:leave="transition ease-in duration-75"
+                            x-transition:leave-start="transform opacity-100 scale-100"
+                            x-transition:leave-end="transform opacity-0 scale-95"
+                        >
+                            <div class="py-1">
+                                <div class="px-4 py-2 text-sm text-gray-700 border-b">
+                                    <p class="font-medium">{{ current_user.nome }} {{ current_user.sobrenome }}</p>
+                                    <p class="text-xs text-gray-500 truncate">{{ current_user.email }}</p>
+                                </div>
+                                
+                                <a href="{{ url_for('minhas_deteccoes') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {% if request.endpoint == 'minhas_deteccoes' %}bg-primary/10 text-primary{% endif %}">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="list" class="h-4 w-4"></i>
+                                        Minhas Detecções
+                                    </div>
+                                </a>
+                                
+                                <form action="{{ url_for('logout') }}" method="post" class="block">
+                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <div class="flex items-center gap-2">
+                                            <i data-lucide="log-out" class="h-4 w-4"></i>
+                                            Logout
+                                        </div>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -116,3 +156,4 @@
     {% block scripts %}{% endblock %}
 </body>
 </html>
+

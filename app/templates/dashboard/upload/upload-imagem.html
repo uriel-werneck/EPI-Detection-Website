@@ -1,61 +1,69 @@
 {% extends "dashboard/navbar.html" %}
 
-{% block title %}Upload de Imagem - SafetyAI{% endblock %}
+{% block title %}Upload de Imagem - EPI Detection{% endblock %}
 
 {% block content %}
-<div class="py-8">
-    <div class="max-w-2xl mx-auto">
-        <h1 class="text-3xl font-bold tracking-tight mb-4">Upload de Imagem</h1>
-        <p class="text-muted-foreground mb-8">Faça upload de uma imagem para análise de EPIs</p>
+<div class="container py-8 max-w-7xl">
+    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">Upload de Imagem</h1>
+            <p class="text-muted-foreground">Faça upload de uma imagem para detectar EPIs</p>
+        </div>
+    </div>
 
-        <form action="{{ url_for('upload', type='upload-imagem') }}" method="post" enctype="multipart/form-data" class="space-y-6">
-            <div class="border-2 border-dashed rounded-lg p-8 text-center">
-                <input type="file" 
-                       id="image-upload" 
-                       name="image" 
-                       accept="image/*" 
-                       class="hidden" 
-                       onchange="previewImage(event)">
-                <label for="image-upload" class="cursor-pointer">
-                    <div class="space-y-4">
-                        <i data-lucide="upload-cloud" class="mx-auto h-12 w-12 text-gray-400"></i>
-                        <div class="flex flex-col items-center text-sm">
-                            <span class="font-medium text-primary">Clique para fazer upload</span>
-                            <span class="text-gray-500">ou arraste e solte</span>
-                        </div>
-                        <p class="text-xs text-gray-500">PNG, JPG ou GIF até 10MB</p>
-                    </div>
-                </label>
-                <div id="preview" class="mt-4 hidden">
-                    <img id="preview-image" class="max-h-64 mx-auto" alt="Preview">
+    <div class="mt-8 grid gap-6 md:grid-cols-2">
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
+            <h3 class="text-lg font-medium mb-4">Selecione uma Imagem</h3>
+            
+            <form action="{{ url_for('upload', type='upload-imagem') }}" method="post" enctype="multipart/form-data" class="space-y-4">
+                <div class="grid w-full max-w-sm items-center gap-1.5">
+                    <label for="image" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                        Imagem
+                    </label>
+                    <input
+                        id="image"
+                        name="image"
+                        type="file"
+                        accept="image/*"
+                        class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        required
+                    />
                 </div>
+                
+                <button type="submit" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
+                    <i data-lucide="upload" class="h-4 w-4 mr-2"></i>
+                    Enviar Imagem
+                </button>
+            </form>
+            
+            <div class="mt-4 text-sm text-muted-foreground">
+                <p>Formatos suportados: JPG, PNG, JPEG</p>
+                <p>Tamanho máximo: 10MB</p>
             </div>
-
-            <button type="submit" class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 w-full">
-                Enviar Imagem
-            </button>
-        </form>
+        </div>
 
         {% if processed_image %}
-        <div class="mt-8">
-            <h2 class="text-xl font-bold mb-4">Resultado da Análise</h2>
-            <img src="{{ url_for('static', filename='results/' + processed_image) }}" alt="Processed Image" class="max-w-full">
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
+            <h3 class="text-lg font-medium mb-4">Resultado da Detecção</h3>
+            <div class="relative aspect-video overflow-hidden rounded-lg border">
+                <img 
+                    src="{{ url_for('static', filename='results/' + processed_image) }}" 
+                    alt="Imagem Processada" 
+                    class="object-contain w-full h-full"
+                />
+            </div>
+            <div class="mt-4 flex justify-between">
+                <a href="{{ url_for('home') }}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+                    <i data-lucide="bar-chart" class="h-4 w-4 mr-2"></i>
+                    Ver no Dashboard
+                </a>
+                <a href="{{ url_for('static', filename='results/' + processed_image) }}" download class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
+                    <i data-lucide="download" class="h-4 w-4 mr-2"></i>
+                    Baixar Imagem
+                </a>
+            </div>
         </div>
         {% endif %}
     </div>
 </div>
-
-<script>
-function previewImage(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById('preview').classList.remove('hidden');
-            document.getElementById('preview-image').src = e.target.result;
-        }
-        reader.readAsDataURL(file);
-    }
-}
-</script>
 {% endblock %}

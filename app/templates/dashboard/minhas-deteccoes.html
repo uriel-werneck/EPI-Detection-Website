@@ -1,0 +1,388 @@
+{% extends "dashboard/navbar.html" %}
+
+{% block title %}Minhas Detecções - EPI Detection{% endblock %}
+
+{% block styles %}
+<style>
+    .detection-card {
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .detection-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    .detection-image {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 0.375rem 0.375rem 0 0;
+    }
+    
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 9999px;
+        font-weight: 500;
+        line-height: 1;
+        font-size: 0.75rem;
+        height: 1.25rem;
+        padding-left: 0.625rem;
+        padding-right: 0.625rem;
+        white-space: nowrap;
+        margin-right: 0.25rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .badge-blue {
+        background-color: #ebf5ff;
+        color: #3b82f6;
+    }
+    
+    .badge-purple {
+        background-color: #f3e8ff;
+        color: #8b5cf6;
+    }
+    
+    .badge-green {
+        background-color: #dcfce7;
+        color: #22c55e;
+    }
+    
+    .badge-yellow {
+        background-color: #fef9c3;
+        color: #ca8a04;
+    }
+    
+    .badge-red {
+        background-color: #fee2e2;
+        color: #ef4444;
+    }
+    
+    .badge-orange {
+        background-color: #ffedd5;
+        color: #f97316;
+    }
+    
+    .pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+    }
+    
+    .pagination-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2rem;
+        height: 2rem;
+        padding: 0 0.5rem;
+        margin: 0 0.25rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    
+    .pagination-item:hover:not(.pagination-active, .pagination-disabled) {
+        background-color: #f3f4f6;
+    }
+    
+    .pagination-active {
+        background-color: #4f46e5;
+        color: white;
+    }
+    
+    .pagination-disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 4rem 2rem;
+        text-align: center;
+    }
+    
+    .empty-state-icon {
+        width: 4rem;
+        height: 4rem;
+        color: #9ca3af;
+        margin-bottom: 1.5rem;
+    }
+    
+    .filter-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .filter-input {
+        flex: 1;
+        min-width: 200px;
+    }
+    
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s;
+    }
+    
+    .modal.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .modal-content {
+        background-color: white;
+        border-radius: 0.5rem;
+        max-width: 90%;
+        max-height: 90%;
+        overflow: auto;
+        position: relative;
+    }
+    
+    .modal-image {
+        max-width: 100%;
+        max-height: 80vh;
+        display: block;
+    }
+    
+    .modal-close {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        background-color: white;
+        border-radius: 9999px;
+        width: 2rem;
+        height: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-8 max-w-7xl">
+    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">Minhas Detecções</h1>
+            <p class="text-muted-foreground">Visualize todas as suas detecções de EPIs realizadas</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{{ url_for('upload', type='upload-imagem') }}" class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 bg-primary text-white hover:bg-primary/90">
+                <i data-lucide="plus" class="h-4 w-4"></i>
+                Nova Detecção
+            </a>
+        </div>
+    </div>
+
+    <div class="mt-6 rounded-lg border bg-card text-card-foreground shadow-sm p-4">
+        <h3 class="text-lg font-medium mb-3">Filtros</h3>
+        <form action="{{ url_for('minhas_deteccoes') }}" method="get" class="filter-form">
+            <div class="filter-input">
+                <label for="date-filter" class="block text-sm font-medium mb-1">Data</label>
+                <input type="date" id="date-filter" name="date" value="{{ current_date_filter }}" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background">
+            </div>
+            
+            <div class="filter-input">
+                <label for="class-filter" class="block text-sm font-medium mb-1">Tipo de EPI</label>
+                <select id="class-filter" name="class" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background">
+                    <option value="">Todos</option>
+                    {% for class_name in all_classes %}
+                        <option value="{{ class_name }}" {% if current_class_filter == class_name %}selected{% endif %}>{{ class_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="flex items-end">
+                <button type="submit" class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 bg-primary text-white hover:bg-primary/90">
+                    <i data-lucide="filter" class="h-4 w-4"></i>
+                    Filtrar
+                </button>
+                
+                <a href="{{ url_for('minhas_deteccoes') }}" class="ml-2 inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 text-gray-600 hover:bg-gray-100 border">
+                    <i data-lucide="x" class="h-4 w-4"></i>
+                    Limpar
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div class="mt-6">
+        {% if detections %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for detection in detections %}
+                    <div class="detection-card rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden">
+                        {% if detection.file_exists %}
+                            <img 
+                                src="{{ url_for('static', filename='results/' + detection.filename) }}" 
+                                alt="Detecção {{ detection.id }}" 
+                                class="detection-image cursor-pointer"
+                                onclick="openImageModal('{{ url_for('static', filename='results/' + detection.filename) }}', '{{ detection.original_filename }}')"
+                            >
+                        {% else %}
+                            <div class="detection-image bg-gray-100 flex items-center justify-center">
+                                <div class="text-center p-4">
+                                    <i data-lucide="image-off" class="h-10 w-10 text-gray-400 mx-auto mb-2"></i>
+                                    <p class="text-sm text-gray-500">Imagem não disponível</p>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="p-4">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-semibold text-lg truncate" title="{{ detection.original_filename }}">
+                                    {{ detection.original_filename }}
+                                </h3>
+                                <span class="text-sm text-gray-500">{{ detection.date }}</span>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <p class="text-sm text-gray-500 mb-1">Objetos detectados: {{ detection.quantity }}</p>
+                                <div class="flex flex-wrap">
+                                    {% for class in detection.classes %}
+                                        {% if class %}
+                                            <span class="badge badge-{{ ['blue', 'purple', 'green', 'yellow', 'orange', 'red'][loop.index0 % 6] }}">
+                                                {{ class }}
+                                            </span>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            {% if detection.file_exists %}
+                                <button 
+                                    onclick="openImageModal('{{ url_for('static', filename='results/' + detection.filename) }}', '{{ detection.original_filename }}')"
+                                    class="w-full inline-flex items-center justify-center px-3 py-2 rounded-md text-sm font-medium gap-2 bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                >
+                                    <i data-lucide="maximize" class="h-4 w-4"></i>
+                                    Ver Detalhes
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            {% if pagination.pages > 1 %}
+                <div class="pagination">
+                    {% if pagination.has_prev %}
+                        <a href="{{ url_for('minhas_deteccoes', page=pagination.prev_num, date=current_date_filter, class=current_class_filter) }}" class="pagination-item">
+                            <i data-lucide="chevron-left" class="h-4 w-4"></i>
+                        </a>
+                    {% else %}
+                        <span class="pagination-item pagination-disabled">
+                            <i data-lucide="chevron-left" class="h-4 w-4"></i>
+                        </span>
+                    {% endif %}
+                    
+                    {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if page_num %}
+                            {% if page_num == pagination.page %}
+                                <span class="pagination-item pagination-active">{{ page_num }}</span>
+                            {% else %}
+                                <a href="{{ url_for('minhas_deteccoes', page=page_num, date=current_date_filter, class=current_class_filter) }}" class="pagination-item">{{ page_num }}</a>
+                            {% endif %}
+                        {% else %}
+                            <span class="pagination-item">...</span>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                        <a href="{{ url_for('minhas_deteccoes', page=pagination.next_num, date=current_date_filter, class=current_class_filter) }}" class="pagination-item">
+                            <i data-lucide="chevron-right" class="h-4 w-4"></i>
+                        </a>
+                    {% else %}
+                        <span class="pagination-item pagination-disabled">
+                            <i data-lucide="chevron-right" class="h-4 w-4"></i>
+                        </span>
+                    {% endif %}
+                </div>
+            {% endif %}
+            
+        {% else %}
+            <div class="empty-state">
+                <i data-lucide="image-off" class="empty-state-icon"></i>
+                <h3 class="text-lg font-medium mb-2">Nenhuma detecção encontrada</h3>
+                <p class="text-gray-500 mb-4">Você ainda não realizou nenhuma detecção ou não há resultados para os filtros aplicados.</p>
+                <a href="{{ url_for('upload', type='upload-imagem') }}" class="inline-flex items-center px-4 py-2 rounded-md text-sm font-medium gap-2 bg-primary text-white hover:bg-primary/90">
+                    <i data-lucide="plus" class="h-4 w-4"></i>
+                    Realizar Nova Detecção
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div id="imageModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-close" onclick="closeImageModal()">
+            <i data-lucide="x" class="h-4 w-4"></i>
+        </div>
+        <div class="p-4">
+            <h3 id="modalTitle" class="text-lg font-medium mb-2"></h3>
+            <img id="modalImage" src="/placeholder.svg" alt="Detecção ampliada" class="modal-image">
+        </div>
+    </div>
+</div>
+
+<script>
+    function openImageModal(imageSrc, title) {
+        const modal = document.getElementById('imageModal');
+        const modalImage = document.getElementById('modalImage');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        modalImage.src = imageSrc;
+        modalTitle.textContent = title;
+        modal.classList.add('active');
+        
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeImageModal() {
+        const modal = document.getElementById('imageModal');
+        modal.classList.remove('active');
+        
+        document.body.style.overflow = '';
+    }
+    
+    document.getElementById('imageModal').addEventListener('click', function(event) {
+        if (event.target === this) {
+            closeImageModal();
+        }
+    });
+    
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && document.getElementById('imageModal').classList.contains('active')) {
+            closeImageModal();
+        }
+    });
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    });
+</script>
+{% endblock %}
+

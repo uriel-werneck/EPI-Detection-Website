@@ -1,0 +1,430 @@
+{% extends "dashboard/navbar.html" %}
+
+{% block title %}Relatórios - EPI Detection{% endblock %}
+
+{% block styles %}
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        #report-content, #report-content * {
+            visibility: visible;
+        }
+        #report-content {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+        .no-print {
+            display: none !important;
+        }
+        
+        .chart-container {
+            height: 200px !important;
+            margin-bottom: 20px !important;
+            page-break-inside: avoid;
+        }
+        
+        .page-break-after {
+            page-break-after: always;
+        }
+        
+        h2, h3 {
+            margin-top: 10px !important;
+            margin-bottom: 10px !important;
+        }
+    }
+    
+    .chart-selection-item {
+        transition: all 0.2s ease;
+    }
+    
+    .chart-selection-item.disabled {
+        opacity: 0.5;
+    }
+    
+    .report-logo {
+        max-height: 50px;
+        width: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-8 max-w-7xl">
+    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">Relatórios</h1>
+            <p class="text-muted-foreground">Visualize e exporte relatórios detalhados sobre detecções de EPIs</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <button id="date-filter-btn" class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 text-gray-600 hover:bg-gray-100 border no-print">
+                <i data-lucide="calendar" class="h-4 w-4"></i>
+                Filtrar por Data
+            </button>
+            <button id="export-pdf-btn" class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 bg-primary text-white hover:bg-primary/90 no-print">
+                <i data-lucide="download" class="h-4 w-4"></i>
+                Exportar PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Chart Selection Section -->
+    <div class="mt-8 rounded-lg border bg-card text-card-foreground shadow-sm p-6 no-print">
+        <h3 class="text-lg font-medium mb-4">Selecione os gráficos para o relatório</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="chart-selection-item flex items-center space-x-2">
+                <input type="checkbox" id="stats-cards-toggle" class="chart-toggle h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" checked>
+                <label for="stats-cards-toggle" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Estatísticas de Upload
+                </label>
+            </div>
+            
+            <div class="chart-selection-item flex items-center space-x-2">
+                <input type="checkbox" id="bar-chart-toggle" class="chart-toggle h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" checked>
+                <label for="bar-chart-toggle" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Quantidade de Objetos
+                </label>
+            </div>
+            
+            <div class="chart-selection-item flex items-center space-x-2">
+                <input type="checkbox" id="pie-chart-toggle" class="chart-toggle h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" checked>
+                <label for="pie-chart-toggle" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Distribuição dos Objetos
+                </label>
+            </div>
+            
+            <div class="chart-selection-item flex items-center space-x-2">
+                <input type="checkbox" id="time-series-toggle" class="chart-toggle h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" checked>
+                <label for="time-series-toggle" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Evolução por Data
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Preview Section -->
+    <div id="report-content" class="mt-8">
+        <!-- Report Header -->
+        <div class="mb-8 flex justify-between items-center">
+            <div>
+                <h2 class="text-2xl font-bold">Relatório de Detecção de EPIs</h2>
+                <p class="text-sm text-gray-500">Gerado em: <span id="report-date">{{ now.strftime('%d/%m/%Y %H:%M') }}</span></p>
+                <p class="text-sm text-gray-500">Usuário: {{ current_user.nome }} {{ current_user.sobrenome }}</p>
+            </div>
+            <img src="{{ url_for('static', filename='images/logo-projeto.svg') }}" alt="SafetyAI Logo" class="report-logo" />
+        </div>
+
+        <!-- Stats Cards Section -->
+        <div id="stats-cards-section" class="mb-8">
+            <h3 class="text-xl font-semibold mb-4 pb-2 border-b">Estatísticas de Upload</h3>
+            <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+                <div class="rounded-lg border bg-card text-card-foreground shadow-sm p-6 bg-purple-100">
+                    <div class="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <h3 class="text-sm font-medium">Uploads de Imagens</h3>
+                        <i data-lucide="image" class="h-4 w-4 text-muted-foreground"></i>
+                    </div>
+                    <div class="text-2xl font-bold text-purple-700">{{ detection_stats.total_images }}</div>
+                </div>
+
+                <div class="rounded-lg border bg-card text-card-foreground shadow-sm p-6 bg-green-100">
+                    <div class="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <h3 class="text-sm font-medium">Uploads de Vídeos</h3>
+                        <i data-lucide="video" class="h-4 w-4 text-muted-foreground"></i>
+                    </div>
+                    <div class="text-2xl font-bold text-green-700">{{ detection_stats.video_count|default(0) }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bar Chart Section -->
+        <div id="bar-chart-section" class="mb-8">
+            <h3 class="text-xl font-semibold mb-4 pb-2 border-b">Quantidade de Objetos Detectados</h3>
+            <div class="chart-container h-[250px]">
+                <canvas id="classesChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Pie Chart Section -->
+        <div id="pie-chart-section" class="mb-8">
+            <h3 class="text-xl font-semibold mb-4 pb-2 border-b">Distribuição dos Objetos</h3>
+            <div class="chart-container h-[250px]">
+                <canvas id="distributionChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Time Series Chart Section -->
+        <div id="time-series-section" class="mb-8">
+            <h3 class="text-xl font-semibold mb-4 pb-2 border-b">Evolução da Detecção de Objetos por Data</h3>
+            <div class="chart-container h-[300px]">
+                <canvas id="timeSeriesChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<script>
+    const detectedClasses = JSON.parse('{{ detection_stats.detected_classes | tojson | safe }}');
+    const timeSeriesData = JSON.parse('{{ detection_stats.time_series_data | tojson | safe }}');
+    
+    const colorPalette = [
+        '#4361ee', '#3a0ca3', '#7209b7', '#f72585', '#4cc9f0', 
+        '#4895ef', '#560bad', '#f15bb5', '#00bbf9', '#00f5d4'
+    ];
+    
+    let classesChart, distributionChart, timeSeriesChart;
+    
+    function initCharts() {
+        const classesCtx = document.getElementById('classesChart');
+        classesChart = new Chart(classesCtx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(detectedClasses),
+                datasets: [{
+                    label: 'Quantidade de Detecções',
+                    data: Object.values(detectedClasses),
+                    backgroundColor: Object.keys(detectedClasses).map((_, index) => colorPalette[index % colorPalette.length]),
+                    borderWidth: 0,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Quantidade'
+                        },
+                        grid: {
+                            display: true,
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Objeto'
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 10,
+                        cornerRadius: 6,
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.label}: ${context.raw} detecções`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        const distributionCtx = document.getElementById('distributionChart');
+        distributionChart = new Chart(distributionCtx, {
+            type: 'pie',
+            data: {
+                labels: Object.keys(detectedClasses),
+                datasets: [{
+                    data: Object.values(detectedClasses),
+                    backgroundColor: Object.keys(detectedClasses).map((_, index) => colorPalette[index % colorPalette.length]),
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            boxWidth: 15,
+                            padding: 15,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 10,
+                        cornerRadius: 6,
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((context.raw / total) * 100);
+                                return `${context.label}: ${percentage}%`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        const timeSeriesCtx = document.getElementById('timeSeriesChart');
+        timeSeriesChart = new Chart(timeSeriesCtx, {
+            type: 'line',
+            data: {
+                labels: timeSeriesData.dates,
+                datasets: [
+                    {
+                        label: 'Objetos Detectados',
+                        data: timeSeriesData.detections,
+                        borderColor: '#4361ee',
+                        backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: true,
+                        pointBackgroundColor: '#4361ee',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    },
+                    {
+                        label: 'Uploads de Imagens',
+                        data: timeSeriesData.uploads,
+                        borderColor: '#f72585',
+                        backgroundColor: 'rgba(247, 37, 133, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: true,
+                        pointBackgroundColor: '#f72585',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Quantidade'
+                        },
+                        grid: {
+                            display: true,
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Data'
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        align: 'end',
+                        labels: {
+                            boxWidth: 15,
+                            padding: 15,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 10,
+                        cornerRadius: 6,
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                }
+            }
+        });
+    }
+    
+    function updateChartVisibility() {
+        const statsCardsVisible = document.getElementById('stats-cards-toggle').checked;
+        const barChartVisible = document.getElementById('bar-chart-toggle').checked;
+        const pieChartVisible = document.getElementById('pie-chart-toggle').checked;
+        const timeSeriesVisible = document.getElementById('time-series-toggle').checked;
+        
+        document.getElementById('stats-cards-section').style.display = statsCardsVisible ? 'block' : 'none';
+        document.getElementById('bar-chart-section').style.display = barChartVisible ? 'block' : 'none';
+        document.getElementById('pie-chart-section').style.display = pieChartVisible ? 'block' : 'none';
+        document.getElementById('time-series-section').style.display = timeSeriesVisible ? 'block' : 'none';
+    }
+    
+    function generatePDF() {
+        document.getElementById('report-date').textContent = new Date().toLocaleString('pt-BR');
+        
+        const element = document.getElementById('report-content');
+        
+        const options = {
+            margin: [15, 15, 15, 15],
+            filename: 'relatorio-epi-detection.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { 
+                scale: 2, 
+                useCORS: true,
+                logging: false,
+                letterRendering: true,
+                allowTaint: true
+            },
+            jsPDF: { 
+                unit: 'mm', 
+                format: 'a4', 
+                orientation: 'portrait',
+                compress: true
+            }
+        };
+        
+        window.dispatchEvent(new Event('resize'));
+        
+        html2pdf().set(options).from(element).save();
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('report-date').textContent = new Date().toLocaleString('pt-BR');
+        
+        initCharts();
+        
+        document.querySelectorAll('.chart-toggle').forEach(toggle => {
+            toggle.addEventListener('change', updateChartVisibility);
+        });
+        
+        document.getElementById('export-pdf-btn').addEventListener('click', generatePDF);
+        
+        updateChartVisibility();
+        
+        window.addEventListener('resize', function() {
+            if (classesChart) classesChart.resize();
+            if (distributionChart) distributionChart.resize();
+            if (timeSeriesChart) timeSeriesChart.resize();
+        });
+    });
+</script>
+{% endblock %}
+
