@@ -11,6 +11,7 @@ from functions_detect import process_image_with_yolo, draw_bounding_boxes
 from functions_detect import TRANSLATIONS
 from datetime import datetime, timedelta
 from sqlalchemy import func, text
+from datetime import datetime, timedelta
 import json
 import math
 
@@ -62,17 +63,32 @@ def get_detected_classes(detections):
                 class_counts[cls] = class_counts.get(cls, 0) + 1
     return class_counts
 
-def get_time_series_data(user_id):
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=6)
+# MODIFY THIS FUNCTION to accept date parameters
+def get_time_series_data(user_id, start_date=None, end_date=None):
+    # If no dates provided, use default range (last 7 days)
+    if start_date is None or end_date is None:
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=6)
+    
+    # Calculate the number of days in the range
+    days_diff = (end_date - start_date).days
+    
+    # Ensure we have at least 1 day
+    if days_diff < 1:
+        days_diff = 1
+    
+    # Generate formatted dates for the range
     formatted_dates = []
     current_date = start_date
     while current_date <= end_date:
         date_str = current_date.strftime('%d/%m/%Y')
         formatted_dates.append(date_str)
         current_date += timedelta(days=1)
+    
     detections_data = [0] * len(formatted_dates)
     uploads_data = [0] * len(formatted_dates)
+    
+    # MODIFY THIS: Use the date range in the SQL query
     raw_sql = text("""
         SELECT 
             date(timestamp) as date_only, 
@@ -86,10 +102,13 @@ def get_time_series_data(user_id):
         GROUP BY date_only
         ORDER BY date_only
     """)
+    
     result = db.session.execute(
         raw_sql, 
         {"user_id": user_id, "start_date": start_date, "end_date": end_date}
     )
+    
+    # Rest of your function remains the same...
     daily_data = {}
     for row in result:
         db_date = row[0]
@@ -100,10 +119,13 @@ def get_time_series_data(user_id):
             'detections': int(total_detections or 0),
             'uploads': int(upload_count or 0)
         }
+    
     for i, date_str in enumerate(formatted_dates):
         if date_str in daily_data:
             detections_data[i] = daily_data[date_str]['detections']
             uploads_data[i] = daily_data[date_str]['uploads']
+    
+    # Debug info
     print("=" * 50)
     print("TIME SERIES DEBUG INFO")
     print(f"Start date: {start_date}")
@@ -113,18 +135,7 @@ def get_time_series_data(user_id):
     print(f"Final detections data: {detections_data}")
     print(f"Final uploads data: {uploads_data}")
     print("=" * 50)
-    if all(x == 0 for x in detections_data) and all(x == 0 for x in uploads_data):
-        print("WARNING: All data is zero. Adding test data for today.")
-        today_index = formatted_dates.index(end_date.strftime('%d/%m/%Y'))
-        today_detections = Detection.query.filter(
-            Detection.user_id == user_id,
-            func.date(Detection.timestamp) == func.date(end_date)
-        ).all()
-        if today_detections:
-            today_count = sum(d.quantity for d in today_detections)
-            detections_data[today_index] = today_count
-            uploads_data[today_index] = len(today_detections)
-            print(f"Added test data: {today_count} detections, {len(today_detections)} uploads")
+    
     return {
         "dates": formatted_dates,
         "detections": detections_data,
@@ -242,21 +253,62 @@ def register():
 @app.route("/relatorios")
 @login_required
 def relatorios():
-    detections = Detection.query.filter_by(user_id=current_user.id).all()
-    video_count = Detection.query.filter_by(user_id=current_user.id, upload_type='upload-video').count()
-    time_series_data = get_time_series_data(current_user.id)
+    # Get date filter parameters (ADD THIS)
+    start_date_str = request.args.get('start_date')
+    end_date_str = request.args.get('end_date')
+    
+    # Default to last 7 days if no dates provided (ADD THIS)
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=7)
+    
+    # Track if we're using a custom filter (ADD THIS)
+    using_custom_filter = False
+    
+    # Parse date strings if provided (ADD THIS)
+    if start_date_str and end_date_str:
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+            # Set end_date to the end of the day
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+            end_date = end_date.replace(hour=23, minute=59, second=59)
+            using_custom_filter = True
+        except ValueError:
+            flash('Formato de data inválido. Use YYYY-MM-DD.', 'error')
+    
+    # MODIFY THIS: Pass date parameters to filter detections
+    detections = Detection.query.filter(
+        Detection.user_id == current_user.id,
+        Detection.timestamp >= start_date,
+        Detection.timestamp <= end_date
+    ).all()
+    
+    # MODIFY THIS: Pass date parameters to filter video count
+    video_count = Detection.query.filter(
+        Detection.user_id == current_user.id,
+        Detection.upload_type == 'upload-video',
+        Detection.timestamp >= start_date,
+        Detection.timestamp <= end_date
+    ).count()
+    
+    # MODIFY THIS: Pass date parameters to get_time_series_data
+    time_series_data = get_time_series_data(current_user.id, start_date, end_date)
     
     detection_stats = {
         "total_images": len(detections),
         "video_count": video_count,
         "detected_classes": get_detected_classes(detections),
-        "time_series_data": time_series_data
+        "time_series_data": time_series_data,
+        # ADD THIS: Include date filter info
+        "date_filter": {
+            "start_date": start_date.strftime('%Y-%m-%d'),
+            "end_date": end_date.strftime('%Y-%m-%d'),
+            "is_custom": using_custom_filter
+        }
     }
     
     now = datetime.now()
     
     return render_template("dashboard/relatorios.html", detection_stats=detection_stats, now=now)
-
 @app.route("/minhas-deteccoes")
 @login_required
 def minhas_deteccoes():

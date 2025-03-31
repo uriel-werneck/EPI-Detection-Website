@@ -16,24 +16,46 @@
             left: 0;
             top: 0;
             width: 100%;
+            margin: 0;
+            padding: 10mm;
         }
         .no-print {
             display: none !important;
         }
         
         .chart-container {
-            height: 200px !important;
-            margin-bottom: 20px !important;
+            height: 180px !important;
+            max-height: 180px !important;
+            width: 100% !important;
+            margin-bottom: 15px !important;
             page-break-inside: avoid;
+        }
+        
+        #stats-cards-section,
+        #bar-chart-section,
+        #pie-chart-section,
+        #time-series-section {
+            page-break-inside: avoid;
+            margin-bottom: 20px !important;
+        }
+        
+        h2, h3 {
+            margin-top: 10px !important;
+            margin-bottom: 10px !important;
+            font-size: 16px !important;
         }
         
         .page-break-after {
             page-break-after: always;
         }
         
-        h2, h3 {
-            margin-top: 10px !important;
+        .grid {
+            display: block !important;
+        }
+        
+        .grid > div {
             margin-bottom: 10px !important;
+            width: 100% !important;
         }
     }
     
@@ -49,11 +71,56 @@
         max-height: 50px;
         width: auto;
     }
+    
+    .pdf-mode .chart-container {
+        height: 180px !important;
+        max-height: 180px !important;
+    }
+    
+    .pdf-loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.8);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+    
+    .pdf-loading-text {
+        margin-top: 20px;
+        font-size: 18px;
+        font-weight: bold;
+    }
+    
+    .spinner {
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 2s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container py-8 max-w-7xl">
+    <!-- Loading indicator for PDF generation -->
+    <div id="pdf-loading" class="pdf-loading" style="display: none;">
+        <div class="spinner"></div>
+        <div class="pdf-loading-text">Gerando PDF, por favor aguarde...</div>
+    </div>
+
     <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
             <h1 class="text-3xl font-bold tracking-tight">Relatórios</h1>
@@ -64,7 +131,33 @@
                 <i data-lucide="calendar" class="h-4 w-4"></i>
                 Filtrar por Data
             </button>
-            <button id="export-pdf-btn" class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 bg-primary text-white hover:bg-primary/90 no-print">
+                    <!-- Date Filter Dropdown -->
+            <!-- Date Filter Dropdown (ADD THIS AS NEW CODE) -->
+            <div id="date-filter-dropdown" class="absolute right-0 mt-2 w-72 bg-white rounded-md shadow-lg z-10 border border-gray-200 p-4 hidden no-print">
+                <h4 class="text-sm font-medium mb-3">Filtrar por período</h4>
+                
+                <div class="space-y-3">
+                    <div>
+                        <label for="start-date" class="block text-xs font-medium text-gray-700 mb-1">Data inicial</label>
+                        <input type="date" id="start-date" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                    </div>
+                    
+                    <div>
+                        <label for="end-date" class="block text-xs font-medium text-gray-700 mb-1">Data final</label>
+                        <input type="date" id="end-date" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                    </div>
+                    
+                    <div class="flex items-center space-x-2 pt-2">
+                        <button id="apply-date-filter" class="flex-1 bg-primary text-white rounded-md px-3 py-2 text-sm font-medium">
+                            Aplicar
+                        </button>
+                        <button id="clear-date-filter" class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm font-medium">
+                            Limpar
+                        </button>
+                    </div>
+                </div>
+            </div>
+                        <button id="export-pdf-btn" class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 bg-primary text-white hover:bg-primary/90 no-print">
                 <i data-lucide="download" class="h-4 w-4"></i>
                 Exportar PDF
             </button>
@@ -143,7 +236,7 @@
         <!-- Bar Chart Section -->
         <div id="bar-chart-section" class="mb-8">
             <h3 class="text-xl font-semibold mb-4 pb-2 border-b">Quantidade de Objetos Detectados</h3>
-            <div class="chart-container h-[250px]">
+            <div class="chart-container" style="height: 250px;">
                 <canvas id="classesChart"></canvas>
             </div>
         </div>
@@ -151,7 +244,7 @@
         <!-- Pie Chart Section -->
         <div id="pie-chart-section" class="mb-8">
             <h3 class="text-xl font-semibold mb-4 pb-2 border-b">Distribuição dos Objetos</h3>
-            <div class="chart-container h-[250px]">
+            <div class="chart-container" style="height: 250px;">
                 <canvas id="distributionChart"></canvas>
             </div>
         </div>
@@ -159,7 +252,7 @@
         <!-- Time Series Chart Section -->
         <div id="time-series-section" class="mb-8">
             <h3 class="text-xl font-semibold mb-4 pb-2 border-b">Evolução da Detecção de Objetos por Data</h3>
-            <div class="chart-container h-[300px]">
+            <div class="chart-container" style="height: 300px;">
                 <canvas id="timeSeriesChart"></canvas>
             </div>
         </div>
@@ -182,6 +275,24 @@
     let classesChart, distributionChart, timeSeriesChart;
     
     function initCharts() {
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 0 
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        boxWidth: 15,
+                        font: {
+                            size: 11 
+                        }
+                    }
+                }
+            }
+        };
+        
         const classesCtx = document.getElementById('classesChart');
         classesChart = new Chart(classesCtx, {
             type: 'bar',
@@ -196,27 +307,42 @@
                 }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                ...commonOptions,
                 scales: {
                     y: {
                         beginAtZero: true,
                         title: {
                             display: true,
-                            text: 'Quantidade'
+                            text: 'Quantidade',
+                            font: {
+                                size: 11
+                            }
                         },
                         grid: {
                             display: true,
                             color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            font: {
+                                size: 10
+                            }
                         }
                     },
                     x: {
                         title: {
                             display: true,
-                            text: 'Objeto'
+                            text: 'Objeto',
+                            font: {
+                                size: 11
+                            }
                         },
                         grid: {
                             display: false
+                        },
+                        ticks: {
+                            font: {
+                                size: 10
+                            }
                         }
                     }
                 },
@@ -251,16 +377,15 @@
                 }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                ...commonOptions,
                 plugins: {
                     legend: {
                         position: 'right',
                         labels: {
                             boxWidth: 15,
-                            padding: 15,
+                            padding: 10,
                             font: {
-                                size: 12
+                                size: 10
                             }
                         }
                     },
@@ -313,27 +438,42 @@
                 ]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                ...commonOptions,
                 scales: {
                     y: {
                         beginAtZero: true,
                         title: {
                             display: true,
-                            text: 'Quantidade'
+                            text: 'Quantidade',
+                            font: {
+                                size: 11
+                            }
                         },
                         grid: {
                             display: true,
                             color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            font: {
+                                size: 10
+                            }
                         }
                     },
                     x: {
                         title: {
                             display: true,
-                            text: 'Data'
+                            text: 'Data',
+                            font: {
+                                size: 11
+                            }
                         },
                         grid: {
                             display: false
+                        },
+                        ticks: {
+                            font: {
+                                size: 10
+                            }
                         }
                     }
                 },
@@ -343,9 +483,12 @@
                         align: 'end',
                         labels: {
                             boxWidth: 15,
-                            padding: 15,
+                            padding: 10,
                             usePointStyle: true,
-                            pointStyle: 'circle'
+                            pointStyle: 'circle',
+                            font: {
+                                size: 10
+                            }
                         }
                     },
                     tooltip: {
@@ -377,33 +520,157 @@
         document.getElementById('time-series-section').style.display = timeSeriesVisible ? 'block' : 'none';
     }
     
-    function generatePDF() {
-        document.getElementById('report-date').textContent = new Date().toLocaleString('pt-BR');
+    function prepareChartsForPDF() {
+        document.body.classList.add('pdf-mode');
         
-        const element = document.getElementById('report-content');
+        if (classesChart) {
+            classesChart.options.plugins.legend.display = false;
+            classesChart.resize();
+        }
         
-        const options = {
-            margin: [15, 15, 15, 15],
-            filename: 'relatorio-epi-detection.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { 
-                scale: 2, 
-                useCORS: true,
-                logging: false,
-                letterRendering: true,
-                allowTaint: true
-            },
-            jsPDF: { 
-                unit: 'mm', 
-                format: 'a4', 
-                orientation: 'portrait',
-                compress: true
-            }
-        };
+        if (distributionChart) {
+            distributionChart.options.plugins.legend.position = 'right';
+            distributionChart.options.plugins.legend.labels.boxWidth = 10;
+            distributionChart.options.plugins.legend.labels.font.size = 8;
+            distributionChart.resize();
+        }
+        
+        if (timeSeriesChart) {
+            timeSeriesChart.options.plugins.legend.position = 'top';
+            timeSeriesChart.options.plugins.legend.labels.font.size = 8;
+            timeSeriesChart.resize();
+        }
         
         window.dispatchEvent(new Event('resize'));
+    }
+    
+    function restoreChartsAfterPDF() {
+        document.body.classList.remove('pdf-mode');
         
-        html2pdf().set(options).from(element).save();
+        if (classesChart) classesChart.resize();
+        if (distributionChart) distributionChart.resize();
+        if (timeSeriesChart) timeSeriesChart.resize();
+        
+        window.dispatchEvent(new Event('resize'));
+    }
+    
+    async function generatePDF() {
+        try {
+            document.getElementById('pdf-loading').style.display = 'flex';
+            
+            document.getElementById('report-date').textContent = new Date().toLocaleString('pt-BR');
+            
+            prepareChartsForPDF();
+            
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            const originalContent = document.getElementById('report-content');
+            const clonedContent = originalContent.cloneNode(true);
+            
+            const canvases = originalContent.querySelectorAll('canvas');
+            const clonedCanvases = clonedContent.querySelectorAll('canvas');
+            
+            for (let i = 0; i < canvases.length; i++) {
+                const canvas = canvases[i];
+                const clonedCanvas = clonedCanvases[i];
+                
+                const img = new Image();
+                img.src = canvas.toDataURL('image/png');
+                
+                const parent = clonedCanvas.parentNode;
+                parent.replaceChild(img, clonedCanvas);
+            }
+            
+            const tempContainer = document.createElement('div');
+            tempContainer.appendChild(clonedContent);
+            tempContainer.style.position = 'absolute';
+            tempContainer.style.left = '-9999px';
+            document.body.appendChild(tempContainer);
+            
+            const options = {
+                margin: [10, 10, 10, 10],
+                filename: 'relatorio-epi-detection.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { 
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    letterRendering: true,
+                    allowTaint: true,
+                    imageTimeout: 0, 
+                    width: 794 
+                },
+                jsPDF: { 
+                    unit: 'mm', 
+                    format: 'a4', 
+                    orientation: 'portrait',
+                    compress: true
+                }
+            };
+            
+            await html2pdf().set(options).from(clonedContent).save();
+            
+            document.body.removeChild(tempContainer);
+            restoreChartsAfterPDF();
+            
+            document.getElementById('pdf-loading').style.display = 'none';
+        } catch (error) {
+            console.error('PDF generation error:', error);
+            alert('Ocorreu um erro ao gerar o PDF. Por favor, tente novamente.');
+            
+            document.getElementById('pdf-loading').style.display = 'none';
+            restoreChartsAfterPDF();
+        }
+    }
+    
+    async function generatePDFAlternative() {
+        try {
+            document.getElementById('pdf-loading').style.display = 'flex';
+            
+            document.getElementById('report-date').textContent = new Date().toLocaleString('pt-BR');
+            
+            prepareChartsForPDF();
+            
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            const element = document.getElementById('report-content');
+            
+            const options = {
+                margin: [10, 10, 10, 10],
+                filename: 'relatorio-epi-detection.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { 
+                    scale: 2,
+                    useCORS: true,
+                    logging: true, 
+                    letterRendering: true,
+                    allowTaint: true,
+                    imageTimeout: 0, 
+                    width: 794, 
+                    height: undefined, 
+                    windowWidth: 1200, 
+                    windowHeight: 1600 
+                },
+                jsPDF: { 
+                    unit: 'mm', 
+                    format: 'a4', 
+                    orientation: 'portrait',
+                    compress: true
+                }
+            };
+            
+            await html2pdf().set(options).from(element).save();
+            
+            restoreChartsAfterPDF();
+            
+            document.getElementById('pdf-loading').style.display = 'none';
+        } catch (error) {
+            console.error('PDF generation error:', error);
+            alert('Ocorreu um erro ao gerar o PDF. Por favor, tente novamente.');
+            
+            document.getElementById('pdf-loading').style.display = 'none';
+            restoreChartsAfterPDF();
+        }
     }
     
     document.addEventListener('DOMContentLoaded', function() {
@@ -425,6 +692,120 @@
             if (timeSeriesChart) timeSeriesChart.resize();
         });
     });
+
+    // Date filter functionality (ADD THIS AS NEW CODE)
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get references to date filter elements
+        const dateFilterBtn = document.getElementById('date-filter-btn');
+        const dateFilterDropdown = document.getElementById('date-filter-dropdown');
+        const applyDateFilterBtn = document.getElementById('apply-date-filter');
+        const clearDateFilterBtn = document.getElementById('clear-date-filter');
+        const startDateInput = document.getElementById('start-date');
+        const endDateInput = document.getElementById('end-date');
+        
+        // Set default date values (last 7 days)
+        const today = new Date();
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(today.getDate() - 7);
+        
+        startDateInput.valueAsDate = sevenDaysAgo;
+        endDateInput.valueAsDate = today;
+        
+        // Toggle date filter dropdown
+        dateFilterBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dateFilterDropdown.classList.toggle('hidden');
+            
+            // Position the dropdown relative to the button
+            const buttonRect = dateFilterBtn.getBoundingClientRect();
+            dateFilterDropdown.style.top = `${buttonRect.bottom + window.scrollY}px`;
+            dateFilterDropdown.style.right = `${window.innerWidth - buttonRect.right}px`;
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!dateFilterDropdown.contains(e.target) && e.target !== dateFilterBtn) {
+                dateFilterDropdown.classList.add('hidden');
+            }
+        });
+        
+        // Apply date filter
+        applyDateFilterBtn.addEventListener('click', function() {
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+            
+            if (startDate && endDate) {
+                // Redirect to the same page with date filter parameters
+                const currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.set('start_date', startDate);
+                currentUrl.searchParams.set('end_date', endDate);
+                window.location.href = currentUrl.toString();
+            } else {
+                alert('Por favor, selecione as datas inicial e final.');
+            }
+        });
+        
+        // Clear date filter
+        clearDateFilterBtn.addEventListener('click', function() {
+            // Reset the input fields to default values
+            startDateInput.valueAsDate = sevenDaysAgo;
+            endDateInput.valueAsDate = today;
+            
+            // Remove URL parameters
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.delete('start_date');
+            currentUrl.searchParams.delete('end_date');
+            
+            // Set a flag in session storage
+            sessionStorage.setItem('just_cleared_filter', 'true');
+            
+            // Force a full page reload to refresh all data
+            window.location.href = currentUrl.toString();
+        });
+        
+        // Set input values from URL parameters if they exist
+        const urlParams = new URLSearchParams(window.location.search);
+        const startDateParam = urlParams.get('start_date');
+        const endDateParam = urlParams.get('end_date');
+        
+        if (startDateParam) {
+            startDateInput.value = startDateParam;
+        }
+        
+        if (endDateParam) {
+            endDateInput.value = endDateParam;
+        }
+        
+        // Update filter button text if filter is active
+        if (startDateParam && endDateParam) {
+            const formattedStartDate = new Date(startDateParam).toLocaleDateString('pt-BR');
+            const formattedEndDate = new Date(endDateParam).toLocaleDateString('pt-BR');
+            dateFilterBtn.innerHTML = `
+                <i data-lucide="calendar" class="h-4 w-4"></i>
+                ${formattedStartDate} - ${formattedEndDate}
+            `;
+            
+            // Add active class to button
+            dateFilterBtn.classList.add('bg-gray-100');
+            dateFilterBtn.classList.add('text-primary');
+        }
+        
+        // Check if page was just reloaded after clearing filter
+        const justCleared = sessionStorage.getItem('just_cleared_filter');
+        if (justCleared) {
+            // Remove the flag
+            sessionStorage.removeItem('just_cleared_filter');
+            
+            // Force charts to redraw
+            setTimeout(() => {
+                if (classesChart) classesChart.destroy();
+                if (distributionChart) distributionChart.destroy();
+                if (timeSeriesChart) timeSeriesChart.destroy();
+                
+                // Reinitialize charts
+                initCharts();
+            }, 100);
+        }
+    });
 </script>
 {% endblock %}
-
