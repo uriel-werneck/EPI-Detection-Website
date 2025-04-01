@@ -253,36 +253,38 @@ def register():
 @app.route("/relatorios")
 @login_required
 def relatorios():
-    # Get date filter parameters (ADD THIS)
     start_date_str = request.args.get('start_date')
     end_date_str = request.args.get('end_date')
-    
-    # Default to last 7 days if no dates provided (ADD THIS)
+    show_all = request.args.get('show_all') == 'true'
     end_date = datetime.now()
     start_date = end_date - timedelta(days=7)
     
-    # Track if we're using a custom filter (ADD THIS)
     using_custom_filter = False
     
-    # Parse date strings if provided (ADD THIS)
-    if start_date_str and end_date_str:
+    if show_all:
+        start_date = datetime(2000, 1, 1)  
+        end_date = datetime.now()
+        using_custom_filter = False
+    elif start_date_str and end_date_str:
         try:
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
-            # Set end_date to the end of the day
             end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
             end_date = end_date.replace(hour=23, minute=59, second=59)
             using_custom_filter = True
         except ValueError:
             flash('Formato de data inválido. Use YYYY-MM-DD.', 'error')
     
-    # MODIFY THIS: Pass date parameters to filter detections
+    print(f"DEBUG: Date filter - start_date: {start_date}, end_date: {end_date}")
+    print(f"DEBUG: Using custom filter: {using_custom_filter}, show_all: {show_all}")
+    
     detections = Detection.query.filter(
         Detection.user_id == current_user.id,
         Detection.timestamp >= start_date,
         Detection.timestamp <= end_date
     ).all()
     
-    # MODIFY THIS: Pass date parameters to filter video count
+    print(f"DEBUG: Found {len(detections)} detections in date range")
+    
     video_count = Detection.query.filter(
         Detection.user_id == current_user.id,
         Detection.upload_type == 'upload-video',
@@ -290,7 +292,6 @@ def relatorios():
         Detection.timestamp <= end_date
     ).count()
     
-    # MODIFY THIS: Pass date parameters to get_time_series_data
     time_series_data = get_time_series_data(current_user.id, start_date, end_date)
     
     detection_stats = {
@@ -298,11 +299,11 @@ def relatorios():
         "video_count": video_count,
         "detected_classes": get_detected_classes(detections),
         "time_series_data": time_series_data,
-        # ADD THIS: Include date filter info
         "date_filter": {
             "start_date": start_date.strftime('%Y-%m-%d'),
             "end_date": end_date.strftime('%Y-%m-%d'),
-            "is_custom": using_custom_filter
+            "is_custom": using_custom_filter,
+            "show_all": show_all
         }
     }
     
