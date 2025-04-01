@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, url_for, redirect, flash, session
+from flask import Flask, render_template, request, url_for, redirect, flash, session, jsonify, send_file
 import os
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -7,13 +7,16 @@ from validate_docbr import CPF
 import numpy as np
 import cv2 as cv
 from ultralytics import YOLO
-from functions_detect import process_image_with_yolo, draw_bounding_boxes  
+from functions_detect import process_image_with_yolo, draw_bounding_boxes, process_video_with_classes, image_to_base64, base64_to_image
 from functions_detect import TRANSLATIONS
 from datetime import datetime, timedelta
-from sqlalchemy import func, text
+from sqlalchemy import func, text, inspect
 from datetime import datetime, timedelta
 import json
 import math
+import tempfile
+import uuid
+import sqlite3
 
 model = YOLO(os.path.join('app', 'static', 'model', 'yolov8s_custom.pt'))
 
@@ -26,11 +29,27 @@ app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 app.secret_key = 'your_secret_key_here'
 app.config['UPLOAD_FOLDER'] = os.path.join(static_dir, 'uploads')
 app.config['RESULTS_FOLDER'] = os.path.join(static_dir, 'results')
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max upload
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['RESULTS_FOLDER'], exist_ok=True)
 
 init_db(app)
+
+# Verificar se as colunas existem no banco de dados
+def check_columns_exist():
+    inspector = inspect(db.engine)
+    columns = [column['name'] for column in inspector.get_columns('detections')]
+    return {
+        'image_data': 'image_data' in columns,
+        'video_data': 'video_data' in columns,
+        'is_stored_in_db': 'is_stored_in_db' in columns
+    }
+
+# Verificar colunas ao iniciar a aplicação
+with app.app_context():
+    columns_exist = check_columns_exist()
+    print(f"Colunas existentes no banco: {columns_exist}")
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -63,7 +82,6 @@ def get_detected_classes(detections):
                 class_counts[cls] = class_counts.get(cls, 0) + 1
     return class_counts
 
-# MODIFY THIS FUNCTION to accept date parameters
 def get_time_series_data(user_id, start_date=None, end_date=None):
     # If no dates provided, use default range (last 7 days)
     if start_date is None or end_date is None:
@@ -145,15 +163,19 @@ def get_time_series_data(user_id, start_date=None, end_date=None):
 @app.route('/dashboard/upload/<type>', methods=['GET', 'POST'])
 @login_required
 def upload(type):
+    # Verificar se as colunas existem no banco de dados
+    columns_exist = check_columns_exist()
+    
     if request.method == 'GET':
         if type == 'upload-imagem':
             return render_template('dashboard/upload/upload-imagem.html')
         elif type == 'upload-video':
             return render_template('dashboard/upload/upload-video.html')
-    file = request.files.get('image') if type == 'upload-imagem' else request.files.get('video')
-    if file and file.filename:
-        file_bytes = file.read()
-        if type == 'upload-imagem':
+        
+    if type == 'upload-imagem':
+        file = request.files.get('image')
+        if file and file.filename:
+            file_bytes = file.read()
             image = cv.imdecode(np.frombuffer(file_bytes, np.uint8), cv.IMREAD_COLOR)
             class_names, boxes = process_image_with_yolo(image)  
             if class_names:
@@ -161,17 +183,30 @@ def upload(type):
                 result_filename = f"processed_{file.filename}"
                 result_path = os.path.join(app.config['RESULTS_FOLDER'], result_filename)
                 cv.imwrite(result_path, image_with_boxes)
-                detection = Detection(
-                    user_id=current_user.id,
-                    file_name=file.filename,
-                    detection_data=','.join(class_names),
-                    upload_type=type,
-                    quantity=len(class_names),
-                    detected_classes=','.join(class_names),
-                    timestamp=datetime.now()
-                )
+                
+                # Criar o objeto Detection com os campos básicos
+                detection_data = {
+                    'user_id': current_user.id,
+                    'file_name': file.filename,
+                    'detection_data': ','.join(class_names),
+                    'upload_type': type,
+                    'quantity': len(class_names),
+                    'detected_classes': ','.join(class_names),
+                    'timestamp': datetime.now()
+                }
+                
+                # Adicionar campos adicionais se as colunas existirem
+                if columns_exist['image_data']:
+                    image_base64 = image_to_base64(image_with_boxes)
+                    detection_data['image_data'] = image_base64
+                
+                if columns_exist['is_stored_in_db']:
+                    detection_data['is_stored_in_db'] = True
+                
+                detection = Detection(**detection_data)
                 db.session.add(detection)
                 db.session.commit()
+                
                 print(f"New detection added: {detection.id}, timestamp: {detection.timestamp}")
                 print(f"Detection classes: {detection.detected_classes}")
                 print(f"Detection quantity: {detection.quantity}")
@@ -179,11 +214,99 @@ def upload(type):
                 return render_template('dashboard/upload/upload-imagem.html', processed_image=result_filename)
             else:
                 flash('Nenhuma classe detectada na imagem.', 'warning')
+                
+    elif type == 'upload-video':
+        file = request.files.get('video')
+        if file and file.filename:
+            # Salvar o vídeo temporariamente
+            temp_dir = tempfile.mkdtemp()
+            temp_video_path = os.path.join(temp_dir, file.filename)
+            file.save(temp_video_path)
+            
+            # Gerar um nome único para o vídeo processado
+            unique_id = str(uuid.uuid4())[:8]
+            output_filename = f"processed_{unique_id}_{file.filename}"
+            output_path = os.path.join(app.config['RESULTS_FOLDER'], output_filename)
+            
+            # Processar o vídeo
+            result_info = process_video_with_classes(temp_video_path, output_path)
+            
+            if result_info:
+                # Criar o objeto Detection com os campos básicos
+                detection_data = {
+                    'user_id': current_user.id,
+                    'file_name': file.filename,
+                    'detection_data': ','.join(result_info['detected_classes']),
+                    'upload_type': type,
+                    'quantity': result_info['max_objects'],
+                    'detected_classes': ','.join(result_info['detected_classes']),
+                    'timestamp': datetime.now()
+                }
+                
+                # Adicionar campos adicionais se as colunas existirem
+                if columns_exist['image_data'] and result_info['frame_image_base64']:
+                    detection_data['image_data'] = result_info['frame_image_base64']
+                
+                if columns_exist['is_stored_in_db']:
+                    detection_data['is_stored_in_db'] = True
+                
+                detection = Detection(**detection_data)
+                db.session.add(detection)
+                db.session.commit()
+                
+                flash('Vídeo processado com sucesso! Clique em "Ver no Dashboard" para visualizar as estatísticas atualizadas.', 'success')
+                return render_template('dashboard/upload/upload-video.html', 
+                                      processed_video=output_filename,
+                                      frame_image=result_info['frame_filename'],
+                                      detected_classes=result_info['detected_classes'],
+                                      max_objects=result_info['max_objects'])
+            else:
+                flash('Erro ao processar o vídeo.', 'error')
+                
+            # Limpar arquivos temporários
+            try:
+                os.remove(temp_video_path)
+                os.rmdir(temp_dir)
+            except:
+                pass
         else:
-            flash('Tipo de upload não suportado.', 'error')
+            flash('Nenhum arquivo selecionado ou arquivo inválido.', 'error')
     else:
-        flash('Nenhum arquivo selecionado ou arquivo inválido.', 'error')
+        flash('Tipo de upload não suportado.', 'error')
+        
     return redirect(url_for('upload', type=type))
+
+@app.route('/get-detection-image/<int:detection_id>')
+@login_required
+def get_detection_image(detection_id):
+    columns_exist = check_columns_exist()
+    detection = Detection.query.filter_by(id=detection_id, user_id=current_user.id).first()
+    
+    if not detection:
+        return "Detecção não encontrada", 404
+    
+    # Verificar se a imagem está armazenada no banco de dados
+    if columns_exist['image_data'] and hasattr(detection, 'image_data') and detection.image_data:
+        # Converter base64 para imagem
+        image = base64_to_image(detection.image_data)
+        
+        # Salvar temporariamente para enviar
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.jpg')
+        temp_file.close()
+        cv.imwrite(temp_file.name, image)
+        
+        return send_file(temp_file.name, mimetype='image/jpeg', as_attachment=True, 
+                        download_name=f"detection_{detection_id}.jpg")
+    else:
+        # Se não estiver no banco, tentar buscar do sistema de arquivos
+        processed_filename = f"processed_{detection.file_name}"
+        file_path = os.path.join(app.config['RESULTS_FOLDER'], processed_filename)
+        
+        if os.path.isfile(file_path):
+            return send_file(file_path, mimetype='image/jpeg', as_attachment=True,
+                            download_name=processed_filename)
+        else:
+            return "Imagem não encontrada", 404
 
 @app.route('/')
 def index():
@@ -310,9 +433,11 @@ def relatorios():
     now = datetime.now()
     
     return render_template("dashboard/relatorios.html", detection_stats=detection_stats, now=now)
+
 @app.route("/minhas-deteccoes")
 @login_required
 def minhas_deteccoes():
+    columns_exist = check_columns_exist()
     page = request.args.get('page', 1, type=int)
     per_page = 9  
     
@@ -347,8 +472,23 @@ def minhas_deteccoes():
     for detection in detections:
         processed_filename = f"processed_{detection.file_name}"
         
-        file_path = os.path.join(app.config['RESULTS_FOLDER'], processed_filename)
-        file_exists = os.path.isfile(file_path)
+        # Verificar se a detecção está armazenada no banco de dados
+        file_exists = True
+        is_stored_in_db = False
+        
+        if columns_exist['is_stored_in_db'] and hasattr(detection, 'is_stored_in_db') and detection.is_stored_in_db:
+            if columns_exist['image_data'] and hasattr(detection, 'image_data') and detection.image_data:
+                # Se estiver no banco, usamos a rota para obter a imagem
+                processed_filename = f"/get-detection-image/{detection.id}"
+                is_stored_in_db = True
+            else:
+                # Caso contrário, verificamos se o arquivo existe no sistema de arquivos
+                file_path = os.path.join(app.config['RESULTS_FOLDER'], processed_filename)
+                file_exists = os.path.isfile(file_path)
+        else:
+            # Verificar no sistema de arquivos
+            file_path = os.path.join(app.config['RESULTS_FOLDER'], processed_filename)
+            file_exists = os.path.isfile(file_path)
         
         formatted_date = detection.timestamp.strftime('%d/%m/%Y %H:%M')
         
@@ -361,7 +501,9 @@ def minhas_deteccoes():
             'date': formatted_date,
             'classes': classes,
             'quantity': detection.quantity,
-            'file_exists': file_exists
+            'file_exists': file_exists,
+            'upload_type': detection.upload_type,
+            'is_stored_in_db': is_stored_in_db
         })
     
     return render_template(

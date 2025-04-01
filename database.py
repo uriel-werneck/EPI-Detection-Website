@@ -42,13 +42,14 @@ class Detection(db.Model):
     file_name = db.Column(db.String(200), nullable=False)
     detection_data = db.Column(db.Text, nullable=False)  
     timestamp = db.Column(db.DateTime, default=db.func.current_timestamp(), nullable=False)
-    upload_type = db.Column(db.String(10), nullable=False)  
+    upload_type = db.Column(db.String(20), nullable=False)  # Alterado para suportar 'upload-video'
     quantity = db.Column(db.Integer, nullable=False) 
-    detected_classes = db.Column(db.Text, nullable=False)  
+    detected_classes = db.Column(db.Text, nullable=False)
+    # Novos campos para armazenar imagens e vídeos no banco de dados
+    image_data = db.Column(db.Text)  # Base64 da imagem ou frame do vídeo
+    video_data = db.Column(db.Text)  # Base64 do vídeo (se aplicável)
+    is_stored_in_db = db.Column(db.Boolean, default=False)  # Indica se está armazenado no banco
 
     def __repr__(self):
         return f'<Detection {self.id} - User {self.user_id}>'
 
-if __name__ == '__main__':
-    app = Flask(__name__)
-    init_db(app)

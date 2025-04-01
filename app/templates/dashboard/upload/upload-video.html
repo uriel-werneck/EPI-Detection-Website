@@ -8,7 +8,7 @@
         <h1 class="text-3xl font-bold tracking-tight mb-4">Upload de Vídeo</h1>
         <p class="text-muted-foreground mb-8">Faça upload de um vídeo para análise de EPIs</p>
 
-        <form action="{{ url_for('upload', type='video') }}" method="post" enctype="multipart/form-data" class="space-y-6">
+        <form action="{{ url_for('upload', type='upload-video') }}" method="post" enctype="multipart/form-data" class="space-y-6">
             <div class="border-2 border-dashed rounded-lg p-8 text-center">
                 <input type="file" 
                        id="video-upload" 
@@ -35,6 +35,60 @@
                 Enviar Vídeo
             </button>
         </form>
+
+        {% if processed_video %}
+        <div class="mt-8 space-y-6">
+            <div class="bg-green-50 border border-green-200 rounded-md p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i data-lucide="check-circle" class="h-5 w-5 text-green-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-green-800">Vídeo processado com sucesso!</h3>
+                        <div class="mt-2 text-sm text-green-700">
+                            <p>Foram detectados {{ max_objects }} objetos no frame com mais detecções.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border rounded-md p-4">
+                <h3 class="text-lg font-medium mb-4">Resultado da Detecção</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <h4 class="text-sm font-medium mb-2">Frame com mais detecções:</h4>
+                        {% if frame_image %}
+                        <img src="{{ url_for('static', filename='results/frames/' + frame_image) }}" alt="Frame com mais detecções" class="w-full rounded-md">
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-sm font-medium mb-2">Classes detectadas:</h4>
+                        <ul class="list-disc pl-5 space-y-1">
+                            {% for class_name in detected_classes %}
+                            <li class="text-sm">{{ class_name }}</li>
+                            {% endfor %}
+                        </ul>
+                        
+                        <div class="mt-4">
+                            <h4 class="text-sm font-medium mb-2">Vídeo processado:</h4>
+                            <video controls class="w-full rounded-md">
+                                <source src="{{ url_for('static', filename='results/' + processed_video) }}" type="video/mp4">
+                                Seu navegador não suporta a reprodução de vídeos.
+                            </video>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 flex justify-end">
+                    <a href="{{ url_for('home') }}" class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
+                        Ver no Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 
@@ -53,3 +107,4 @@ function previewVideo(event) {
 }
 </script>
 {% endblock %}
+
