@@ -4,6 +4,7 @@
 
 {% block styles %}
 <style>
+    /* Estilos para a página web */
     .chart-selection-item {
         transition: all 0.2s ease;
     }
@@ -53,20 +54,23 @@
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
     }
-    
-    /* Estilos para o filtro de data */
-    .date-filter-dropdown {
+        .date-filter-dropdown {
         position: absolute;
-        right: 0;
-        margin-top: 8px;
+        z-index: 100;
         width: 320px;
         background-color: white;
         border-radius: 8px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        z-index: 50;
         border: 1px solid #e2e8f0;
         padding: 16px;
         display: none;
+        top: 100%;
+        left: 0;
+        margin-top: 8px;
+    }
+    
+    .date-filter-container {
+        position: relative;
     }
     
     .date-filter-dropdown.active {
@@ -247,7 +251,7 @@
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
     
-    /* Estilos para o seletor de gráficos */
+    /* Estilos para o seletor de gráficos - MELHORADO */
     .chart-selection-container {
         background-color: white;
         border-radius: 8px;
@@ -343,6 +347,58 @@
         color: #4361ee;
         border-color: #C7D2FE;
     }
+    
+    /* Estilo para checkbox personalizado - NOVO */
+    .custom-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        user-select: none;
+    }
+    
+    .custom-checkbox input {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+        height: 0;
+        width: 0;
+    }
+    
+    .checkmark {
+        height: 20px;
+        width: 20px;
+        background-color: #fff;
+        border: 2px solid #d1d5db;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+    
+    .custom-checkbox:hover .checkmark {
+        border-color: #4361ee;
+    }
+    
+    .custom-checkbox input:checked ~ .checkmark {
+        background-color: #4361ee;
+        border-color: #4361ee;
+    }
+    
+    .checkmark:after {
+        content: "";
+        display: none;
+        width: 5px;
+        height: 10px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+    }
+    
+    .custom-checkbox input:checked ~ .checkmark:after {
+        display: block;
+    }
 </style>
 {% endblock %}
 
@@ -361,8 +417,8 @@
             <p class="text-muted-foreground">Visualize e exporte relatórios detalhados sobre detecções de EPIs</p>
         </div>
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 no-print">
-            <!-- Date Filter Button -->
-            <div class="relative">
+            <!-- Date Filter Button - CORRIGIDO -->
+            <div class="date-filter-container">
                 <button id="date-filter-btn" class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 text-gray-600 hover:bg-gray-100 border no-print">
                     <i data-lucide="calendar" class="h-4 w-4"></i>
                     <span id="date-filter-text">Filtrar por Data</span>
@@ -413,38 +469,34 @@
         </div>
     </div>
 
-    <!-- Chart Selection Section (Improved) -->
+    <!-- Chart Selection Section (Improved) - CORRIGIDO -->
     <div class="chart-selection-container no-print">
         <h3 class="chart-selection-title">Selecione os gráficos para o relatório</h3>
         
         <div class="chart-selection-grid">
-            <div class="chart-selection-item">
+            <label class="custom-checkbox">
                 <input type="checkbox" id="stats-cards-toggle" class="chart-toggle" checked>
-                <label for="stats-cards-toggle" class="chart-toggle-label">
-                    Estatísticas de Upload
-                </label>
-            </div>
+                <span class="checkmark"></span>
+                <span class="chart-toggle-label">Estatísticas de Upload</span>
+            </label>
             
-            <div class="chart-selection-item">
+            <label class="custom-checkbox">
                 <input type="checkbox" id="bar-chart-toggle" class="chart-toggle" checked>
-                <label for="bar-chart-toggle" class="chart-toggle-label">
-                    Quantidade de Objetos
-                </label>
-            </div>
+                <span class="checkmark"></span>
+                <span class="chart-toggle-label">Quantidade de Objetos</span>
+            </label>
             
-            <div class="chart-selection-item">
+            <label class="custom-checkbox">
                 <input type="checkbox" id="pie-chart-toggle" class="chart-toggle" checked>
-                <label for="pie-chart-toggle" class="chart-toggle-label">
-                    Distribuição dos Objetos
-                </label>
-            </div>
+                <span class="checkmark"></span>
+                <span class="chart-toggle-label">Distribuição dos Objetos</span>
+            </label>
             
-            <div class="chart-selection-item">
+            <label class="custom-checkbox">
                 <input type="checkbox" id="time-series-toggle" class="chart-toggle" checked>
-                <label for="time-series-toggle" class="chart-toggle-label">
-                    Evolução por Data
-                </label>
-            </div>
+                <span class="checkmark"></span>
+                <span class="chart-toggle-label">Evolução por Data</span>
+            </label>
         </div>
     </div>
 
@@ -830,21 +882,55 @@
     
     /**
      * Atualiza a visibilidade dos gráficos com base nas seleções do usuário
+     * CORRIGIDO: Agora realmente mostra/oculta as seções conforme selecionado
      */
     function updateChartVisibility() {
-        statsCardsVisible = document.getElementById('stats-cards-toggle').checked;
-        const barChartVisible = document.getElementById('bar-chart-toggle').checked;
         const statsCardsVisible = document.getElementById('stats-cards-toggle').checked;
+        const barChartVisible = document.getElementById('bar-chart-toggle').checked;
         const pieChartVisible = document.getElementById('pie-chart-toggle').checked;
         const timeSeriesVisible = document.getElementById('time-series-toggle').checked;
         
-        document.getElementById('stats-cards-section').style.display = statsCardsVisible ? 'block' : 'none';
-        document.getElementById('bar-chart-section').style.display = barChartVisible ? 'block' : 'none';
-        document.getElementById('pie-chart-section').style.display = pieChartVisible ? 'block' : 'none';
-        document.getElementById('time-series-section').style.display = timeSeriesVisible ? 'block' : 'none';
+        // Atualiza a visibilidade das seções
+        const statsSection = document.getElementById('stats-cards-section');
+        const barSection = document.getElementById('bar-chart-section');
+        const pieSection = document.getElementById('pie-chart-section');
+        const timeSeriesSection = document.getElementById('time-series-section');
+        
+        if (statsSection) {
+            statsSection.style.display = statsCardsVisible ? 'block' : 'none';
+        }
+        
+        if (barSection) {
+            barSection.style.display = barChartVisible ? 'block' : 'none';
+        }
+        
+        if (pieSection) {
+            pieSection.style.display = pieChartVisible ? 'block' : 'none';
+        }
+        
+        if (timeSeriesSection) {
+            timeSeriesSection.style.display = timeSeriesVisible ? 'block' : 'none';
+        }
+        
+        // Salva as preferências no localStorage para persistir entre sessões
+        const preferences = {
+            stats: statsCardsVisible,
+            bar: barChartVisible,
+            pie: pieChartVisible,
+            timeSeries: timeSeriesVisible
+        };
+        
+        localStorage.setItem('reportChartPreferences', JSON.stringify(preferences));
         
         // Redimensiona os gráficos visíveis para melhor visualização
-        window.dispatchEvent(new Event('resize'));
+        setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+            
+            // Atualiza os gráficos visíveis
+            if (barChartVisible && classesChart) classesChart.resize();
+            if (pieChartVisible && distributionChart) distributionChart.resize();
+            if (timeSeriesVisible && timeSeriesChart) timeSeriesChart.resize();
+        }, 100);
     }
     
     /**
@@ -924,92 +1010,102 @@
             doc.line(margin, yPos, pageWidth - margin, yPos);
             yPos += 10;
             
-            // Seção 1: Estatísticas de Upload
-            doc.setFontSize(14);
-            doc.setTextColor(textColor);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Estatísticas de Upload', margin, yPos);
-            yPos += 10;
+            // Verifica quais seções devem ser incluídas no PDF
+            const includeStats = document.getElementById('stats-cards-toggle').checked;
+            const includeBarChart = document.getElementById('bar-chart-toggle').checked;
+            const includePieChart = document.getElementById('pie-chart-toggle').checked;
+            const includeTimeSeries = document.getElementById('time-series-toggle').checked;
             
-            // Cria tabela de estatísticas
-            const statsData = [
-                ['Tipo', 'Quantidade'],
-                ['Uploads de Imagens', totalImages.toString()],
-                ['Uploads de Vídeos', totalVideos.toString()]
-            ];
+            // Seção 1: Estatísticas de Upload (se selecionada)
+            if (includeStats) {
+                doc.setFontSize(14);
+                doc.setTextColor(textColor);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Estatísticas de Upload', margin, yPos);
+                yPos += 10;
+                
+                // Cria tabela de estatísticas
+                const statsData = [
+                    ['Tipo', 'Quantidade'],
+                    ['Uploads de Imagens', totalImages.toString()],
+                    ['Uploads de Vídeos', totalVideos.toString()]
+                ];
+                
+                doc.autoTable({
+                    startY: yPos,
+                    head: [statsData[0]],
+                    body: statsData.slice(1),
+                    theme: 'grid',
+                    headStyles: {
+                        fillColor: primaryColor,
+                        textColor: '#FFFFFF',
+                        fontStyle: 'bold'
+                    },
+                    styles: {
+                        fontSize: 10,
+                        cellPadding: 5
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 80 },
+                        1: { cellWidth: 40, halign: 'center' }
+                    },
+                    margin: { left: margin, right: margin }
+                });
+                
+                yPos = doc.lastAutoTable.finalY + 15;
+            }
             
-            doc.autoTable({
-                startY: yPos,
-                head: [statsData[0]],
-                body: statsData.slice(1),
-                theme: 'grid',
-                headStyles: {
-                    fillColor: primaryColor,
-                    textColor: '#FFFFFF',
-                    fontStyle: 'bold'
-                },
-                styles: {
-                    fontSize: 10,
-                    cellPadding: 5
-                },
-                columnStyles: {
-                    0: { cellWidth: 80 },
-                    1: { cellWidth: 40, halign: 'center' }
-                },
-                margin: { left: margin, right: margin }
-            });
-            
-            yPos = doc.lastAutoTable.finalY + 15;
-            
-            // Seção 2: Quantidade de Objetos Detectados
-            doc.setFontSize(14);
-            doc.setTextColor(textColor);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Quantidade de Objetos Detectados', margin, yPos);
-            yPos += 10;
-            
-            // Cria tabela de objetos detectados
-            const objectsData = [
-                ['Objeto', 'Quantidade', 'Percentual']
-            ];
-            
-            objectClasses.forEach((className, index) => {
-                const value = objectValues[index];
-                const percentage = ((value / totalObjects) * 100).toFixed(1) + '%';
-                objectsData.push([className, value.toString(), percentage]);
-            });
-            
-            // Adiciona linha de total
-            objectsData.push(['Total', totalObjects.toString(), '100%']);
-            
-            doc.autoTable({
-                startY: yPos,
-                head: [objectsData[0]],
-                body: objectsData.slice(1),
-                theme: 'grid',
-                headStyles: {
-                    fillColor: primaryColor,
-                    textColor: '#FFFFFF',
-                    fontStyle: 'bold'
-                },
-                styles: {
-                    fontSize: 10,
-                    cellPadding: 5
-                },
-                columnStyles: {
-                    0: { cellWidth: 80 },
-                    1: { cellWidth: 40, halign: 'center' },
-                    2: { cellWidth: 40, halign: 'center' }
-                },
-                margin: { left: margin, right: margin },
-                footStyles: {
-                    fillColor: [240, 240, 240],
-                    textColor: textColor,
-                    fontStyle: 'bold'
-                }
-            });
-            
-            yPos = doc.lastAutoTable.finalY + 15;
+            // Seção 2: Quantidade de Objetos Detectados (se selecionada)
+            if (includeBarChart) {
+                doc.setFontSize(14);
+                doc.setTextColor(textColor);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Quantidade de Objetos Detectados', margin, yPos);
+                yPos += 10;
+                
+                // Cria tabela de objetos detectados
+                const objectsData = [
+                    ['Objeto', 'Quantidade', 'Percentual']
+                ];
+                
+                objectClasses.forEach((className, index) => {
+                    const value = objectValues[index];
+                    const percentage = ((value / totalObjects) * 100).toFixed(1) + '%';
+                    objectsData.push([className, value.toString(), percentage]);
+                });
+                
+                // Adiciona linha de total
+                objectsData.push(['Total', totalObjects.toString(), '100%']);
+                
+                doc.autoTable({
+                    startY: yPos,
+                    head: [objectsData[0]],
+                    body: objectsData.slice(1),
+                    theme: 'grid',
+                    headStyles: {
+                        fillColor: primaryColor,
+                        textColor: '#FFFFFF',
+                        fontStyle: 'bold'
+                    },
+                    styles: {
+                        fontSize: 10,
+                        cellPadding: 5
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 80 },
+                        1: { cellWidth: 40, halign: 'center' },
+                        2: { cellWidth: 40, halign: 'center' }
+                    },
+                    margin: { left: margin, right: margin },
+                    footStyles: {
+                        fillColor: [240, 240, 240],
+                        textColor: textColor,
+                        fontStyle: 'bold'
+                    }
+                });
+                
+                yPos = doc.lastAutoTable.finalY + 15;
+            }
             
             // Verifica se precisa adicionar nova página
             if (yPos > 250) {
@@ -1017,53 +1113,104 @@
                 yPos = margin;
             }
             
-            // Seção 3: Evolução da Detecção de Objetos por Data
-            doc.setFontSize(14);
-            doc.setTextColor(textColor);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Evolução da Detecção de Objetos por Data', margin, yPos);
-            yPos += 10;
-            
-            // Cria tabela de evolução temporal
-            const timeSeriesTableData = [
-                ['Data', 'Objetos Detectados', 'Uploads de Imagens']
-            ];
-            
-            // Adiciona apenas os últimos 10 registros para não sobrecarregar o PDF
-            const maxEntries = Math.min(dates.length, 10);
-            const startIndex = dates.length - maxEntries;
-            
-            for (let i = startIndex; i < dates.length; i++) {
-                timeSeriesTableData.push([
-                    dates[i],
-                    detections[i].toString(),
-                    uploads[i].toString()
-                ]);
+            // Seção 3: Distribuição dos Objetos (se selecionada)
+            if (includePieChart && !includeBarChart) {
+                // Se o gráfico de barras já foi incluído, não precisamos repetir esta informação
+                doc.setFontSize(14);
+                doc.setTextColor(textColor);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Distribuição dos Objetos', margin, yPos);
+                yPos += 10;
+                
+                // Cria tabela de distribuição
+                const distributionData = [
+                    ['Objeto', 'Percentual']
+                ];
+                
+                objectClasses.forEach((className, index) => {
+                    const value = objectValues[index];
+                    const percentage = ((value / totalObjects) * 100).toFixed(1) + '%';
+                    distributionData.push([className, percentage]);
+                });
+                
+                doc.autoTable({
+                    startY: yPos,
+                    head: [distributionData[0]],
+                    body: distributionData.slice(1),
+                    theme: 'grid',
+                    headStyles: {
+                        fillColor: primaryColor,
+                        textColor: '#FFFFFF',
+                        fontStyle: 'bold'
+                    },
+                    styles: {
+                        fontSize: 10,
+                        cellPadding: 5
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 80 },
+                        1: { cellWidth: 40, halign: 'center' }
+                    },
+                    margin: { left: margin, right: margin }
+                });
+                
+                yPos = doc.lastAutoTable.finalY + 15;
             }
             
-            doc.autoTable({
-                startY: yPos,
-                head: [timeSeriesTableData[0]],
-                body: timeSeriesTableData.slice(1),
-                theme: 'grid',
-                headStyles: {
-                    fillColor: primaryColor,
-                    textColor: '#FFFFFF',
-                    fontStyle: 'bold'
-                },
-                styles: {
-                    fontSize: 10,
-                    cellPadding: 5
-                },
-                columnStyles: {
-                    0: { cellWidth: 60 },
-                    1: { cellWidth: 50, halign: 'center' },
-                    2: { cellWidth: 50, halign: 'center' }
-                },
-                margin: { left: margin, right: margin }
-            });
-            
-            yPos = doc.lastAutoTable.finalY + 15;
+            // Seção 4: Evolução da Detecção de Objetos por Data (se selecionada)
+            if (includeTimeSeries) {
+                if (yPos > 200) {
+                    doc.addPage();
+                    yPos = margin;
+                }
+                
+                doc.setFontSize(14);
+                doc.setTextColor(textColor);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Evolução da Detecção de Objetos por Data', margin, yPos);
+                yPos += 10;
+                
+                // Cria tabela de evolução temporal
+                const timeSeriesTableData = [
+                    ['Data', 'Objetos Detectados', 'Uploads de Imagens']
+                ];
+                
+                // Adiciona apenas os últimos 10 registros para não sobrecarregar o PDF
+                const maxEntries = Math.min(dates.length, 10);
+                const startIndex = dates.length - maxEntries;
+                
+                for (let i = startIndex; i < dates.length; i++) {
+                    timeSeriesTableData.push([
+                        dates[i],
+                        detections[i].toString(),
+                        uploads[i].toString()
+                    ]);
+                }
+                
+                doc.autoTable({
+                    startY: yPos,
+                    head: [timeSeriesTableData[0]],
+                    body: timeSeriesTableData.slice(1),
+                    theme: 'grid',
+                    headStyles: {
+                        fillColor: primaryColor,
+                        textColor: '#FFFFFF',
+                        fontStyle: 'bold'
+                    },
+                    styles: {
+                        fontSize: 10,
+                        cellPadding: 5
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 60 },
+                        1: { cellWidth: 50, halign: 'center' },
+                        2: { cellWidth: 50, halign: 'center' }
+                    },
+                    margin: { left: margin, right: margin }
+                });
+                
+                yPos = doc.lastAutoTable.finalY + 15;
+            }
             
             // Adiciona resumo estatístico
             if (yPos > 250) {
@@ -1139,6 +1286,7 @@
     
     /**
      * Inicializa o filtro de data
+     * CORRIGIDO: Posicionamento do dropdown
      */
     function initDateFilter() {
         const dateFilterBtn = document.getElementById('date-filter-btn');
@@ -1162,15 +1310,10 @@
             endDateInput.value = endDateParam;
         }
         
-        // Toggle do dropdown
+        // Toggle do dropdown - CORRIGIDO
         dateFilterBtn.addEventListener('click', function(e) {
             e.stopPropagation();
             dateFilterDropdown.classList.toggle('active');
-            
-            // Posiciona o dropdown em relação ao botão
-            const buttonRect = dateFilterBtn.getBoundingClientRect();
-            dateFilterDropdown.style.top = `${buttonRect.bottom + window.scrollY}px`;
-            dateFilterDropdown.style.right = `${window.innerWidth - buttonRect.right}px`;
         });
         
         // Fecha o dropdown ao clicar fora
@@ -1262,6 +1405,40 @@
     }
     
     /**
+     * Carrega as preferências de visualização de gráficos do localStorage
+     */
+    function loadChartPreferences() {
+        try {
+            const savedPreferences = localStorage.getItem('reportChartPreferences');
+            if (savedPreferences) {
+                const preferences = JSON.parse(savedPreferences);
+                
+                // Aplica as preferências aos checkboxes
+                if (document.getElementById('stats-cards-toggle')) {
+                    document.getElementById('stats-cards-toggle').checked = preferences.stats !== false;
+                }
+                
+                if (document.getElementById('bar-chart-toggle')) {
+                    document.getElementById('bar-chart-toggle').checked = preferences.bar !== false;
+                }
+                
+                if (document.getElementById('pie-chart-toggle')) {
+                    document.getElementById('pie-chart-toggle').checked = preferences.pie !== false;
+                }
+                
+                if (document.getElementById('time-series-toggle')) {
+                    document.getElementById('time-series-toggle').checked = preferences.timeSeries !== false;
+                }
+                
+                // Atualiza a visibilidade dos gráficos
+                updateChartVisibility();
+            }
+        } catch (error) {
+            console.error('Erro ao carregar preferências de gráficos:', error);
+        }
+    }
+    
+    /**
      * Formata uma data para exibição
      * @param {string} dateString - String de data no formato YYYY-MM-DD
      * @returns {string} - Data formatada como DD/MM/YYYY
@@ -1309,6 +1486,9 @@
         // Inicializa o filtro de data
         initDateFilter();
         
+        // Carrega preferências de visualização de gráficos
+        loadChartPreferences();
+        
         // Configura os toggles de gráficos
         document.querySelectorAll('.chart-toggle').forEach(toggle => {
             toggle.addEventListener('change', updateChartVisibility);
@@ -1316,9 +1496,6 @@
         
         // Configura o botão de exportação de PDF
         document.getElementById('export-pdf-btn').addEventListener('click', generatePDF);
-        
-        // Atualiza a visibilidade inicial dos gráficos
-        updateChartVisibility();
         
         // Configura o redimensionamento dos gráficos quando a janela for redimensionada
         window.addEventListener('resize', function() {
