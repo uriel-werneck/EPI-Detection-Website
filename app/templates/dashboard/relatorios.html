@@ -4,39 +4,7 @@
 
 {% block styles %}
 <style>
-    @media print {
-        body * {
-            visibility: hidden;
-        }
-        #report-content, #report-content * {
-            visibility: visible;
-        }
-        #report-content {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-        }
-        .no-print {
-            display: none !important;
-        }
-        
-        .chart-container {
-            height: 200px !important;
-            margin-bottom: 20px !important;
-            page-break-inside: avoid;
-        }
-        
-        .page-break-after {
-            page-break-after: always;
-        }
-        
-        h2, h3 {
-            margin-top: 10px !important;
-            margin-bottom: 10px !important;
-        }
-    }
-    
+    /* Estilos para a página web */
     .chart-selection-item {
         transition: all 0.2s ease;
     }
@@ -49,21 +17,451 @@
         max-height: 50px;
         width: auto;
     }
+    
+    /* Estilos para o indicador de carregamento do PDF */
+    .pdf-loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.9);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        backdrop-filter: blur(3px);
+    }
+    
+    .pdf-loading-text {
+        margin-top: 20px;
+        font-size: 18px;
+        font-weight: bold;
+        color: #4361ee;
+    }
+    
+    .spinner {
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #4361ee;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 2s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+        .date-filter-dropdown {
+        position: absolute;
+        z-index: 100;
+        width: 320px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border: 1px solid #e2e8f0;
+        padding: 16px;
+        display: none;
+        top: 100%;
+        left: 0;
+        margin-top: 8px;
+    }
+    
+    .date-filter-container {
+        position: relative;
+    }
+    
+    .date-filter-dropdown.active {
+        display: block;
+    }
+    
+    .date-presets {
+        border-bottom: 1px solid #e2e8f0;
+        padding-bottom: 12px;
+        margin-bottom: 12px;
+    }
+    
+    .date-preset-btn {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 8px 12px;
+        margin-bottom: 4px;
+        border-radius: 4px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+    
+    .date-preset-btn:hover {
+        background-color: #f7fafc;
+        color: #4361ee;
+    }
+    
+    .date-inputs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    
+    .date-input-group {
+        flex: 1;
+    }
+    
+    .date-input-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 500;
+        margin-bottom: 4px;
+        color: #4a5568;
+    }
+    
+    .date-input {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+    
+    .date-input:focus {
+        border-color: #4361ee;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+    }
+    
+    .date-filter-actions {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .date-filter-btn {
+        flex: 1;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: center;
+    }
+    
+    .date-filter-apply {
+        background-color: #4361ee;
+        color: white;
+        border: none;
+    }
+    
+    .date-filter-apply:hover {
+        background-color: #3a56d4;
+    }
+    
+    .date-filter-clear {
+        background-color: white;
+        color: #4a5568;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .date-filter-clear:hover {
+        background-color: #f7fafc;
+        border-color: #cbd5e0;
+    }
+    
+    /* Estilos para os cards de estatísticas */
+    .stats-card {
+        border-radius: 8px;
+        padding: 16px;
+        transition: all 0.3s;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stats-card-purple {
+        background-color: #EDE9FE;
+    }
+    
+    .stats-card-green {
+        background-color: #DCFCE7;
+    }
+    
+    .stats-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    
+    .stats-card-title {
+        font-size: 14px;
+        font-weight: 500;
+        color: #4B5563;
+    }
+    
+    .stats-card-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .stats-card-purple .stats-card-icon {
+        background-color: #DDD6FE;
+        color: #7C3AED;
+    }
+    
+    .stats-card-green .stats-card-icon {
+        background-color: #A7F3D0;
+        color: #059669;
+    }
+    
+    .stats-card-value {
+        font-size: 24px;
+        font-weight: 700;
+    }
+    
+    .stats-card-purple .stats-card-value {
+        color: #7C3AED;
+    }
+    
+    .stats-card-green .stats-card-value {
+        color: #059669;
+    }
+    
+    /* Estilos para os gráficos */
+    .chart-container {
+        background-color: white;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        padding: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s;
+    }
+    
+    .chart-container:hover {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Estilos para o seletor de gráficos - MELHORADO */
+    .chart-selection-container {
+        background-color: white;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        padding: 16px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    
+    .chart-selection-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        color: #1F2937;
+    }
+    
+    .chart-selection-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 12px;
+    }
+    
+    .chart-selection-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .chart-toggle {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+    }
+    
+    .chart-toggle-label {
+        font-size: 14px;
+        cursor: pointer;
+    }
+    
+    /* Estilos para o cabeçalho do relatório */
+    .report-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .report-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1F2937;
+        margin-bottom: 4px;
+    }
+    
+    .report-meta {
+        font-size: 13px;
+        color: #6B7280;
+        margin-bottom: 2px;
+    }
+    
+    /* Estilos para as seções do relatório */
+    .report-section {
+        margin-bottom: 24px;
+    }
+    
+    .report-section-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1F2937;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    /* Layout responsivo para os gráficos */
+    .charts-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+    
+    @media (min-width: 768px) {
+        .charts-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    /* Botão ativo para filtro de data */
+    .date-filter-btn.active {
+        background-color: #EEF2FF;
+        color: #4361ee;
+        border-color: #C7D2FE;
+    }
+    
+    /* Estilo para checkbox personalizado - NOVO */
+    .custom-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        user-select: none;
+    }
+    
+    .custom-checkbox input {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+        height: 0;
+        width: 0;
+    }
+    
+    .checkmark {
+        height: 20px;
+        width: 20px;
+        background-color: #fff;
+        border: 2px solid #d1d5db;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+    
+    .custom-checkbox:hover .checkmark {
+        border-color: #4361ee;
+    }
+    
+    .custom-checkbox input:checked ~ .checkmark {
+        background-color: #4361ee;
+        border-color: #4361ee;
+    }
+    
+    .checkmark:after {
+        content: "";
+        display: none;
+        width: 5px;
+        height: 10px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+    }
+    
+    .custom-checkbox input:checked ~ .checkmark:after {
+        display: block;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container py-8 max-w-7xl">
-    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <!-- Loading indicator for PDF generation -->
+    <div id="pdf-loading" class="pdf-loading" style="display: none;">
+        <div class="spinner"></div>
+        <div class="pdf-loading-text">Gerando PDF, por favor aguarde...</div>
+    </div>
+
+    <!-- Page Header -->
+    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
         <div>
             <h1 class="text-3xl font-bold tracking-tight">Relatórios</h1>
             <p class="text-muted-foreground">Visualize e exporte relatórios detalhados sobre detecções de EPIs</p>
         </div>
-        <div class="flex items-center gap-2">
-            <button id="date-filter-btn" class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 text-gray-600 hover:bg-gray-100 border no-print">
-                <i data-lucide="calendar" class="h-4 w-4"></i>
-                Filtrar por Data
-            </button>
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 no-print">
+            <!-- Date Filter Button - CORRIGIDO -->
+            <div class="date-filter-container">
+                <button id="date-filter-btn" class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 text-gray-600 hover:bg-gray-100 border no-print">
+                    <i data-lucide="calendar" class="h-4 w-4"></i>
+                    <span id="date-filter-text">Filtrar por Data</span>
+                </button>
+                
+                <!-- Date Filter Dropdown (Improved) -->
+                <div id="date-filter-dropdown" class="date-filter-dropdown">
+                    <h4 class="text-sm font-medium mb-3">Filtrar por período</h4>
+                    
+                    <!-- Date Presets -->
+                    <div class="date-presets">
+                        <button type="button" class="date-preset-btn" data-days="7">Últimos 7 dias</button>
+                        <button type="button" class="date-preset-btn" data-days="30">Últimos 30 dias</button>
+                        <button type="button" class="date-preset-btn" data-days="90">Últimos 90 dias</button>
+                        <button type="button" class="date-preset-btn" data-days="365">Último ano</button>
+                    </div>
+                    
+                    <!-- Custom Date Range -->
+                    <div class="date-inputs">
+                        <div class="date-input-group">
+                            <label for="start-date" class="date-input-label">Data inicial</label>
+                            <input type="date" id="start-date" class="date-input">
+                        </div>
+                        
+                        <div class="date-input-group">
+                            <label for="end-date" class="date-input-label">Data final</label>
+                            <input type="date" id="end-date" class="date-input">
+                        </div>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="date-filter-actions">
+                        <button id="clear-date-filter" class="date-filter-btn date-filter-clear">
+                            Limpar
+                        </button>
+                        <button id="apply-date-filter" class="date-filter-btn date-filter-apply">
+                            Aplicar
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Export PDF Button -->
             <button id="export-pdf-btn" class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 bg-primary text-white hover:bg-primary/90 no-print">
                 <i data-lucide="download" class="h-4 w-4"></i>
                 Exportar PDF
@@ -71,95 +469,101 @@
         </div>
     </div>
 
-    <!-- Chart Selection Section -->
-    <div class="mt-8 rounded-lg border bg-card text-card-foreground shadow-sm p-6 no-print">
-        <h3 class="text-lg font-medium mb-4">Selecione os gráficos para o relatório</h3>
+    <!-- Chart Selection Section (Improved) - CORRIGIDO -->
+    <div class="chart-selection-container no-print">
+        <h3 class="chart-selection-title">Selecione os gráficos para o relatório</h3>
         
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="chart-selection-item flex items-center space-x-2">
-                <input type="checkbox" id="stats-cards-toggle" class="chart-toggle h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" checked>
-                <label for="stats-cards-toggle" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                    Estatísticas de Upload
-                </label>
-            </div>
+        <div class="chart-selection-grid">
+            <label class="custom-checkbox">
+                <input type="checkbox" id="stats-cards-toggle" class="chart-toggle" checked>
+                <span class="checkmark"></span>
+                <span class="chart-toggle-label">Estatísticas de Upload</span>
+            </label>
             
-            <div class="chart-selection-item flex items-center space-x-2">
-                <input type="checkbox" id="bar-chart-toggle" class="chart-toggle h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" checked>
-                <label for="bar-chart-toggle" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                    Quantidade de Objetos
-                </label>
-            </div>
+            <label class="custom-checkbox">
+                <input type="checkbox" id="bar-chart-toggle" class="chart-toggle" checked>
+                <span class="checkmark"></span>
+                <span class="chart-toggle-label">Quantidade de Objetos</span>
+            </label>
             
-            <div class="chart-selection-item flex items-center space-x-2">
-                <input type="checkbox" id="pie-chart-toggle" class="chart-toggle h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" checked>
-                <label for="pie-chart-toggle" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                    Distribuição dos Objetos
-                </label>
-            </div>
+            <label class="custom-checkbox">
+                <input type="checkbox" id="pie-chart-toggle" class="chart-toggle" checked>
+                <span class="checkmark"></span>
+                <span class="chart-toggle-label">Distribuição dos Objetos</span>
+            </label>
             
-            <div class="chart-selection-item flex items-center space-x-2">
-                <input type="checkbox" id="time-series-toggle" class="chart-toggle h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" checked>
-                <label for="time-series-toggle" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                    Evolução por Data
-                </label>
-            </div>
+            <label class="custom-checkbox">
+                <input type="checkbox" id="time-series-toggle" class="chart-toggle" checked>
+                <span class="checkmark"></span>
+                <span class="chart-toggle-label">Evolução por Data</span>
+            </label>
         </div>
     </div>
 
-    <!-- Report Preview Section -->
-    <div id="report-content" class="mt-8">
+    <!-- Report Preview Section (Improved) -->
+    <div id="report-content" class="bg-white p-6 rounded-lg border shadow-sm">
         <!-- Report Header -->
-        <div class="mb-8 flex justify-between items-center">
+        <div class="report-header">
             <div>
-                <h2 class="text-2xl font-bold">Relatório de Detecção de EPIs</h2>
-                <p class="text-sm text-gray-500">Gerado em: <span id="report-date">{{ now.strftime('%d/%m/%Y %H:%M') }}</span></p>
-                <p class="text-sm text-gray-500">Usuário: {{ current_user.nome }} {{ current_user.sobrenome }}</p>
+                <h2 class="report-title">Relatório de Detecção de EPIs</h2>
+                <p class="report-meta">Gerado em: <span id="report-date">{{ now.strftime('%d/%m/%Y %H:%M') }}</span></p>
+                <p class="report-meta">Usuário: {{ current_user.nome }} {{ current_user.sobrenome }}</p>
+                {% if detection_stats.date_filter.is_custom %}
+                <p class="report-meta">Período: {{ detection_stats.date_filter.start_date|default('') }} a {{ detection_stats.date_filter.end_date|default('') }}</p>
+                {% endif %}
             </div>
             <img src="{{ url_for('static', filename='images/logo-projeto.svg') }}" alt="SafetyAI Logo" class="report-logo" />
         </div>
 
-        <!-- Stats Cards Section -->
-        <div id="stats-cards-section" class="mb-8">
-            <h3 class="text-xl font-semibold mb-4 pb-2 border-b">Estatísticas de Upload</h3>
+        <!-- Stats Cards Section (Improved) -->
+        <div id="stats-cards-section" class="report-section">
+            <h3 class="report-section-title">Estatísticas de Upload</h3>
             <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
-                <div class="rounded-lg border bg-card text-card-foreground shadow-sm p-6 bg-purple-100">
-                    <div class="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <h3 class="text-sm font-medium">Uploads de Imagens</h3>
-                        <i data-lucide="image" class="h-4 w-4 text-muted-foreground"></i>
+                <div class="stats-card stats-card-purple">
+                    <div class="stats-card-header">
+                        <span class="stats-card-title">Uploads de Imagens</span>
+                        <div class="stats-card-icon">
+                            <i data-lucide="image" class="h-4 w-4"></i>
+                        </div>
                     </div>
-                    <div class="text-2xl font-bold text-purple-700">{{ detection_stats.total_images }}</div>
+                    <div class="stats-card-value">{{ detection_stats.total_images }}</div>
                 </div>
 
-                <div class="rounded-lg border bg-card text-card-foreground shadow-sm p-6 bg-green-100">
-                    <div class="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <h3 class="text-sm font-medium">Uploads de Vídeos</h3>
-                        <i data-lucide="video" class="h-4 w-4 text-muted-foreground"></i>
+                <div class="stats-card stats-card-green">
+                    <div class="stats-card-header">
+                        <span class="stats-card-title">Uploads de Vídeos</span>
+                        <div class="stats-card-icon">
+                            <i data-lucide="video" class="h-4 w-4"></i>
+                        </div>
                     </div>
-                    <div class="text-2xl font-bold text-green-700">{{ detection_stats.video_count|default(0) }}</div>
+                    <div class="stats-card-value">{{ detection_stats.video_count|default(0) }}</div>
                 </div>
             </div>
         </div>
 
-        <!-- Bar Chart Section -->
-        <div id="bar-chart-section" class="mb-8">
-            <h3 class="text-xl font-semibold mb-4 pb-2 border-b">Quantidade de Objetos Detectados</h3>
-            <div class="chart-container h-[250px]">
-                <canvas id="classesChart"></canvas>
+        <!-- Charts Grid (Improved) -->
+        <div class="charts-grid">
+            <!-- Bar Chart Section -->
+            <div id="bar-chart-section" class="report-section">
+                <h3 class="report-section-title">Quantidade de Objetos Detectados</h3>
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="classesChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Pie Chart Section -->
+            <div id="pie-chart-section" class="report-section">
+                <h3 class="report-section-title">Distribuição dos Objetos</h3>
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="distributionChart"></canvas>
+                </div>
             </div>
         </div>
 
-        <!-- Pie Chart Section -->
-        <div id="pie-chart-section" class="mb-8">
-            <h3 class="text-xl font-semibold mb-4 pb-2 border-b">Distribuição dos Objetos</h3>
-            <div class="chart-container h-[250px]">
-                <canvas id="distributionChart"></canvas>
-            </div>
-        </div>
-
-        <!-- Time Series Chart Section -->
-        <div id="time-series-section" class="mb-8">
-            <h3 class="text-xl font-semibold mb-4 pb-2 border-b">Evolução da Detecção de Objetos por Data</h3>
-            <div class="chart-container h-[300px]">
+        <!-- Time Series Chart Section (Full Width) -->
+        <div id="time-series-section" class="report-section">
+            <h3 class="report-section-title">Evolução da Detecção de Objetos por Data</h3>
+            <div class="chart-container" style="height: 350px;">
                 <canvas id="timeSeriesChart"></canvas>
             </div>
         </div>
@@ -169,19 +573,48 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
 <script>
+    // Dados do backend
     const detectedClasses = JSON.parse('{{ detection_stats.detected_classes | tojson | safe }}');
     const timeSeriesData = JSON.parse('{{ detection_stats.time_series_data | tojson | safe }}');
+    const dateFilter = JSON.parse('{{ detection_stats.date_filter | tojson | safe }}');
     
+    // Paleta de cores otimizada
     const colorPalette = [
         '#4361ee', '#3a0ca3', '#7209b7', '#f72585', '#4cc9f0', 
         '#4895ef', '#560bad', '#f15bb5', '#00bbf9', '#00f5d4'
     ];
     
+    // Referências aos gráficos
     let classesChart, distributionChart, timeSeriesChart;
     
+    /**
+     * Inicializa os gráficos com configurações otimizadas
+     */
     function initCharts() {
+        // Configurações comuns para todos os gráficos
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 1000
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        boxWidth: 15,
+                        font: {
+                            size: 11
+                        }
+                    }
+                }
+            }
+        };
+        
+        // Gráfico de barras
         const classesCtx = document.getElementById('classesChart');
         classesChart = new Chart(classesCtx, {
             type: 'bar',
@@ -192,31 +625,50 @@
                     data: Object.values(detectedClasses),
                     backgroundColor: Object.keys(detectedClasses).map((_, index) => colorPalette[index % colorPalette.length]),
                     borderWidth: 0,
-                    borderRadius: 4
+                    borderRadius: 6,
+                    maxBarThickness: 50
                 }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                ...commonOptions,
                 scales: {
                     y: {
                         beginAtZero: true,
                         title: {
                             display: true,
-                            text: 'Quantidade'
+                            text: 'Quantidade',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
                         },
                         grid: {
                             display: true,
                             color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            font: {
+                                size: 11
+                            },
+                            precision: 0
                         }
                     },
                     x: {
                         title: {
                             display: true,
-                            text: 'Objeto'
+                            text: 'Objeto',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
                         },
                         grid: {
                             display: false
+                        },
+                        ticks: {
+                            font: {
+                                size: 11
+                            }
                         }
                     }
                 },
@@ -226,8 +678,14 @@
                     },
                     tooltip: {
                         backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        padding: 10,
+                        padding: 12,
                         cornerRadius: 6,
+                        titleFont: {
+                            size: 13
+                        },
+                        bodyFont: {
+                            size: 12
+                        },
                         callbacks: {
                             label: function(context) {
                                 return `${context.label}: ${context.raw} detecções`;
@@ -238,6 +696,7 @@
             }
         });
 
+        // Gráfico de pizza
         const distributionCtx = document.getElementById('distributionChart');
         distributionChart = new Chart(distributionCtx, {
             type: 'pie',
@@ -251,8 +710,7 @@
                 }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                ...commonOptions,
                 plugins: {
                     legend: {
                         position: 'right',
@@ -260,19 +718,48 @@
                             boxWidth: 15,
                             padding: 15,
                             font: {
-                                size: 12
+                                size: 11
+                            },
+                            generateLabels: function(chart) {
+                                const data = chart.data;
+                                if (data.labels.length && data.datasets.length) {
+                                    const dataset = data.datasets[0];
+                                    const total = dataset.data.reduce((acc, data) => acc + data, 0);
+                                    
+                                    return data.labels.map((label, i) => {
+                                        const value = dataset.data[i];
+                                        const percentage = Math.round((value / total) * 100);
+                                        
+                                        return {
+                                            text: `${label} (${percentage}%)`,
+                                            fillStyle: dataset.backgroundColor[i],
+                                            strokeStyle: dataset.borderColor[i],
+                                            lineWidth: dataset.borderWidth,
+                                            hidden: isNaN(dataset.data[i]) || chart.getDatasetMeta(0).data[i].hidden,
+                                            index: i
+                                        };
+                                    });
+                                }
+                                return [];
                             }
                         }
                     },
                     tooltip: {
                         backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        padding: 10,
+                        padding: 12,
                         cornerRadius: 6,
+                        titleFont: {
+                            size: 13
+                        },
+                        bodyFont: {
+                            size: 12
+                        },
                         callbacks: {
                             label: function(context) {
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = Math.round((context.raw / total) * 100);
-                                return `${context.label}: ${percentage}%`;
+                                const value = context.raw;
+                                const percentage = Math.round((value / total) * 100);
+                                return `${context.label}: ${percentage}% (${value} detecções)`;
                             }
                         }
                     }
@@ -280,6 +767,7 @@
             }
         });
 
+        // Gráfico de série temporal
         const timeSeriesCtx = document.getElementById('timeSeriesChart');
         timeSeriesChart = new Chart(timeSeriesCtx, {
             type: 'line',
@@ -313,27 +801,45 @@
                 ]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                ...commonOptions,
                 scales: {
                     y: {
                         beginAtZero: true,
                         title: {
                             display: true,
-                            text: 'Quantidade'
+                            text: 'Quantidade',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
                         },
                         grid: {
                             display: true,
                             color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            font: {
+                                size: 11
+                            },
+                            precision: 0
                         }
                     },
                     x: {
                         title: {
                             display: true,
-                            text: 'Data'
+                            text: 'Data',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
                         },
                         grid: {
                             display: false
+                        },
+                        ticks: {
+                            font: {
+                                size: 11
+                            }
                         }
                     }
                 },
@@ -343,15 +849,24 @@
                         align: 'end',
                         labels: {
                             boxWidth: 15,
-                            padding: 15,
+                            padding: 10,
                             usePointStyle: true,
-                            pointStyle: 'circle'
+                            pointStyle: 'circle',
+                            font: {
+                                size: 11
+                            }
                         }
                     },
                     tooltip: {
                         backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        padding: 10,
+                        padding: 12,
                         cornerRadius: 6,
+                        titleFont: {
+                            size: 13
+                        },
+                        bodyFont: {
+                            size: 12
+                        },
                         mode: 'index',
                         intersect: false
                     }
@@ -365,60 +880,624 @@
         });
     }
     
+    /**
+     * Atualiza a visibilidade dos gráficos com base nas seleções do usuário
+     * CORRIGIDO: Agora realmente mostra/oculta as seções conforme selecionado
+     */
     function updateChartVisibility() {
         const statsCardsVisible = document.getElementById('stats-cards-toggle').checked;
         const barChartVisible = document.getElementById('bar-chart-toggle').checked;
         const pieChartVisible = document.getElementById('pie-chart-toggle').checked;
         const timeSeriesVisible = document.getElementById('time-series-toggle').checked;
         
-        document.getElementById('stats-cards-section').style.display = statsCardsVisible ? 'block' : 'none';
-        document.getElementById('bar-chart-section').style.display = barChartVisible ? 'block' : 'none';
-        document.getElementById('pie-chart-section').style.display = pieChartVisible ? 'block' : 'none';
-        document.getElementById('time-series-section').style.display = timeSeriesVisible ? 'block' : 'none';
-    }
-    
-    function generatePDF() {
-        document.getElementById('report-date').textContent = new Date().toLocaleString('pt-BR');
+        // Atualiza a visibilidade das seções
+        const statsSection = document.getElementById('stats-cards-section');
+        const barSection = document.getElementById('bar-chart-section');
+        const pieSection = document.getElementById('pie-chart-section');
+        const timeSeriesSection = document.getElementById('time-series-section');
         
-        const element = document.getElementById('report-content');
+        if (statsSection) {
+            statsSection.style.display = statsCardsVisible ? 'block' : 'none';
+        }
         
-        const options = {
-            margin: [15, 15, 15, 15],
-            filename: 'relatorio-epi-detection.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { 
-                scale: 2, 
-                useCORS: true,
-                logging: false,
-                letterRendering: true,
-                allowTaint: true
-            },
-            jsPDF: { 
-                unit: 'mm', 
-                format: 'a4', 
-                orientation: 'portrait',
-                compress: true
-            }
+        if (barSection) {
+            barSection.style.display = barChartVisible ? 'block' : 'none';
+        }
+        
+        if (pieSection) {
+            pieSection.style.display = pieChartVisible ? 'block' : 'none';
+        }
+        
+        if (timeSeriesSection) {
+            timeSeriesSection.style.display = timeSeriesVisible ? 'block' : 'none';
+        }
+        
+        // Salva as preferências no localStorage para persistir entre sessões
+        const preferences = {
+            stats: statsCardsVisible,
+            bar: barChartVisible,
+            pie: pieChartVisible,
+            timeSeries: timeSeriesVisible
         };
         
-        window.dispatchEvent(new Event('resize'));
+        localStorage.setItem('reportChartPreferences', JSON.stringify(preferences));
         
-        html2pdf().set(options).from(element).save();
+        // Redimensiona os gráficos visíveis para melhor visualização
+        setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+            
+            // Atualiza os gráficos visíveis
+            if (barChartVisible && classesChart) classesChart.resize();
+            if (pieChartVisible && distributionChart) distributionChart.resize();
+            if (timeSeriesVisible && timeSeriesChart) timeSeriesChart.resize();
+        }, 100);
     }
     
+    /**
+     * Gera um PDF otimizado do relatório usando jsPDF
+     * Esta versão cria um PDF formatado especificamente para impressão
+     * em vez de simplesmente capturar a tela
+     */
+    async function generatePDF() {
+        try {
+            // Exibe o indicador de carregamento
+            document.getElementById('pdf-loading').style.display = 'flex';
+            
+            // Obtém os dados necessários
+            const totalImages = parseInt(document.querySelector('.stats-card-purple .stats-card-value').textContent);
+            const totalVideos = parseInt(document.querySelector('.stats-card-green .stats-card-value').textContent);
+            
+            // Calcula totais e percentuais para o gráfico de pizza
+            const objectClasses = Object.keys(detectedClasses);
+            const objectValues = Object.values(detectedClasses);
+            const totalObjects = objectValues.reduce((a, b) => a + b, 0);
+            
+            // Prepara dados para a tabela de evolução temporal
+            const dates = timeSeriesData.dates;
+            const detections = timeSeriesData.detections;
+            const uploads = timeSeriesData.uploads;
+            
+            // Cria um novo documento PDF
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+            
+            // Configurações de fonte e cores
+            const primaryColor = '#4361ee';
+            const secondaryColor = '#f72585';
+            const textColor = '#1F2937';
+            const lightTextColor = '#6B7280';
+            
+            // Margens do documento
+            const margin = 15;
+            const pageWidth = 210;
+            const contentWidth = pageWidth - (margin * 2);
+            
+            // Posição Y atual (para controle de posicionamento)
+            let yPos = margin;
+            
+            // Adiciona cabeçalho do relatório
+            doc.setFontSize(20);
+            doc.setTextColor(textColor);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Relatório de Detecção de EPIs', margin, yPos);
+            yPos += 10;
+            
+            // Adiciona metadados do relatório
+            doc.setFontSize(10);
+            doc.setTextColor(lightTextColor);
+            doc.setFont('helvetica', 'normal');
+            
+            const currentDate = new Date().toLocaleString('pt-BR');
+            const userName = '{{ current_user.nome }} {{ current_user.sobrenome }}';
+            
+            doc.text(`Gerado em: ${currentDate}`, margin, yPos);
+            yPos += 5;
+            doc.text(`Usuário: ${userName}`, margin, yPos);
+            yPos += 5;
+            
+            if (dateFilter.is_custom) {
+                doc.text(`Período: ${dateFilter.start_date} a ${dateFilter.end_date}`, margin, yPos);
+                yPos += 5;
+            }
+            
+            // Adiciona linha separadora
+            yPos += 5;
+            doc.setDrawColor(220, 220, 220);
+            doc.line(margin, yPos, pageWidth - margin, yPos);
+            yPos += 10;
+            
+            // Verifica quais seções devem ser incluídas no PDF
+            const includeStats = document.getElementById('stats-cards-toggle').checked;
+            const includeBarChart = document.getElementById('bar-chart-toggle').checked;
+            const includePieChart = document.getElementById('pie-chart-toggle').checked;
+            const includeTimeSeries = document.getElementById('time-series-toggle').checked;
+            
+            // Seção 1: Estatísticas de Upload (se selecionada)
+            if (includeStats) {
+                doc.setFontSize(14);
+                doc.setTextColor(textColor);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Estatísticas de Upload', margin, yPos);
+                yPos += 10;
+                
+                // Cria tabela de estatísticas
+                const statsData = [
+                    ['Tipo', 'Quantidade'],
+                    ['Uploads de Imagens', totalImages.toString()],
+                    ['Uploads de Vídeos', totalVideos.toString()]
+                ];
+                
+                doc.autoTable({
+                    startY: yPos,
+                    head: [statsData[0]],
+                    body: statsData.slice(1),
+                    theme: 'grid',
+                    headStyles: {
+                        fillColor: primaryColor,
+                        textColor: '#FFFFFF',
+                        fontStyle: 'bold'
+                    },
+                    styles: {
+                        fontSize: 10,
+                        cellPadding: 5
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 80 },
+                        1: { cellWidth: 40, halign: 'center' }
+                    },
+                    margin: { left: margin, right: margin }
+                });
+                
+                yPos = doc.lastAutoTable.finalY + 15;
+            }
+            
+            // Seção 2: Quantidade de Objetos Detectados (se selecionada)
+            if (includeBarChart) {
+                doc.setFontSize(14);
+                doc.setTextColor(textColor);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Quantidade de Objetos Detectados', margin, yPos);
+                yPos += 10;
+                
+                // Cria tabela de objetos detectados
+                const objectsData = [
+                    ['Objeto', 'Quantidade', 'Percentual']
+                ];
+                
+                objectClasses.forEach((className, index) => {
+                    const value = objectValues[index];
+                    const percentage = ((value / totalObjects) * 100).toFixed(1) + '%';
+                    objectsData.push([className, value.toString(), percentage]);
+                });
+                
+                // Adiciona linha de total
+                objectsData.push(['Total', totalObjects.toString(), '100%']);
+                
+                doc.autoTable({
+                    startY: yPos,
+                    head: [objectsData[0]],
+                    body: objectsData.slice(1),
+                    theme: 'grid',
+                    headStyles: {
+                        fillColor: primaryColor,
+                        textColor: '#FFFFFF',
+                        fontStyle: 'bold'
+                    },
+                    styles: {
+                        fontSize: 10,
+                        cellPadding: 5
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 80 },
+                        1: { cellWidth: 40, halign: 'center' },
+                        2: { cellWidth: 40, halign: 'center' }
+                    },
+                    margin: { left: margin, right: margin },
+                    footStyles: {
+                        fillColor: [240, 240, 240],
+                        textColor: textColor,
+                        fontStyle: 'bold'
+                    }
+                });
+                
+                yPos = doc.lastAutoTable.finalY + 15;
+            }
+            
+            // Verifica se precisa adicionar nova página
+            if (yPos > 250) {
+                doc.addPage();
+                yPos = margin;
+            }
+            
+            // Seção 3: Distribuição dos Objetos (se selecionada)
+            if (includePieChart && !includeBarChart) {
+                // Se o gráfico de barras já foi incluído, não precisamos repetir esta informação
+                doc.setFontSize(14);
+                doc.setTextColor(textColor);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Distribuição dos Objetos', margin, yPos);
+                yPos += 10;
+                
+                // Cria tabela de distribuição
+                const distributionData = [
+                    ['Objeto', 'Percentual']
+                ];
+                
+                objectClasses.forEach((className, index) => {
+                    const value = objectValues[index];
+                    const percentage = ((value / totalObjects) * 100).toFixed(1) + '%';
+                    distributionData.push([className, percentage]);
+                });
+                
+                doc.autoTable({
+                    startY: yPos,
+                    head: [distributionData[0]],
+                    body: distributionData.slice(1),
+                    theme: 'grid',
+                    headStyles: {
+                        fillColor: primaryColor,
+                        textColor: '#FFFFFF',
+                        fontStyle: 'bold'
+                    },
+                    styles: {
+                        fontSize: 10,
+                        cellPadding: 5
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 80 },
+                        1: { cellWidth: 40, halign: 'center' }
+                    },
+                    margin: { left: margin, right: margin }
+                });
+                
+                yPos = doc.lastAutoTable.finalY + 15;
+            }
+            
+            // Seção 4: Evolução da Detecção de Objetos por Data (se selecionada)
+            if (includeTimeSeries) {
+                if (yPos > 200) {
+                    doc.addPage();
+                    yPos = margin;
+                }
+                
+                doc.setFontSize(14);
+                doc.setTextColor(textColor);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Evolução da Detecção de Objetos por Data', margin, yPos);
+                yPos += 10;
+                
+                // Cria tabela de evolução temporal
+                const timeSeriesTableData = [
+                    ['Data', 'Objetos Detectados', 'Uploads de Imagens']
+                ];
+                
+                // Adiciona apenas os últimos 10 registros para não sobrecarregar o PDF
+                const maxEntries = Math.min(dates.length, 10);
+                const startIndex = dates.length - maxEntries;
+                
+                for (let i = startIndex; i < dates.length; i++) {
+                    timeSeriesTableData.push([
+                        dates[i],
+                        detections[i].toString(),
+                        uploads[i].toString()
+                    ]);
+                }
+                
+                doc.autoTable({
+                    startY: yPos,
+                    head: [timeSeriesTableData[0]],
+                    body: timeSeriesTableData.slice(1),
+                    theme: 'grid',
+                    headStyles: {
+                        fillColor: primaryColor,
+                        textColor: '#FFFFFF',
+                        fontStyle: 'bold'
+                    },
+                    styles: {
+                        fontSize: 10,
+                        cellPadding: 5
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 60 },
+                        1: { cellWidth: 50, halign: 'center' },
+                        2: { cellWidth: 50, halign: 'center' }
+                    },
+                    margin: { left: margin, right: margin }
+                });
+                
+                yPos = doc.lastAutoTable.finalY + 15;
+            }
+            
+            // Adiciona resumo estatístico
+            if (yPos > 250) {
+                doc.addPage();
+                yPos = margin;
+            }
+            
+            doc.setFontSize(14);
+            doc.setTextColor(textColor);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Resumo Estatístico', margin, yPos);
+            yPos += 10;
+            
+            // Calcula estatísticas
+            const totalDetections = detections.reduce((a, b) => a + b, 0);
+            const avgDetectionsPerDay = (totalDetections / dates.length).toFixed(1);
+            const maxDetections = Math.max(...detections);
+            const maxDetectionDate = dates[detections.indexOf(maxDetections)];
+            
+            const statsTextData = [
+                ['Métrica', 'Valor'],
+                ['Total de Objetos Detectados', totalDetections.toString()],
+                ['Média de Detecções por Dia', avgDetectionsPerDay],
+                ['Dia com Mais Detecções', `${maxDetectionDate} (${maxDetections})`],
+                ['Objeto Mais Detectado', `${objectClasses[objectValues.indexOf(Math.max(...objectValues))]} (${Math.max(...objectValues)})`]
+            ];
+            
+            doc.autoTable({
+                startY: yPos,
+                head: [statsTextData[0]],
+                body: statsTextData.slice(1),
+                theme: 'grid',
+                headStyles: {
+                    fillColor: primaryColor,
+                    textColor: '#FFFFFF',
+                    fontStyle: 'bold'
+                },
+                styles: {
+                    fontSize: 10,
+                    cellPadding: 5
+                },
+                columnStyles: {
+                    0: { cellWidth: 80 },
+                    1: { cellWidth: 80 }
+                },
+                margin: { left: margin, right: margin }
+            });
+            
+            // Adiciona rodapé
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(lightTextColor);
+                doc.text(`EPI Detection - Página ${i} de ${pageCount}`, margin, 290);
+                doc.text(`Gerado em: ${currentDate}`, pageWidth - margin - 50, 290, { align: 'right' });
+            }
+            
+            // Salva o PDF
+            doc.save('relatorio-epi-detection.pdf');
+            
+            // Esconde o indicador de carregamento
+            document.getElementById('pdf-loading').style.display = 'none';
+            
+        } catch (error) {
+            console.error('Erro na geração do PDF:', error);
+            alert('Ocorreu um erro ao gerar o PDF. Por favor, tente novamente.');
+            
+            // Esconde o indicador de carregamento em caso de erro
+            document.getElementById('pdf-loading').style.display = 'none';
+        }
+    }
+    
+    /**
+     * Inicializa o filtro de data
+     * CORRIGIDO: Posicionamento do dropdown
+     */
+    function initDateFilter() {
+        const dateFilterBtn = document.getElementById('date-filter-btn');
+        const dateFilterDropdown = document.getElementById('date-filter-dropdown');
+        const applyDateFilterBtn = document.getElementById('apply-date-filter');
+        const clearDateFilterBtn = document.getElementById('clear-date-filter');
+        const startDateInput = document.getElementById('start-date');
+        const endDateInput = document.getElementById('end-date');
+        const dateFilterText = document.getElementById('date-filter-text');
+        
+        // Define valores iniciais dos inputs a partir dos parâmetros da URL ou dados do filtro
+        const urlParams = new URLSearchParams(window.location.search);
+        const startDateParam = urlParams.get('start_date') || dateFilter.start_date;
+        const endDateParam = urlParams.get('end_date') || dateFilter.end_date;
+        
+        if (startDateParam) {
+            startDateInput.value = startDateParam;
+        }
+        
+        if (endDateParam) {
+            endDateInput.value = endDateParam;
+        }
+        
+        // Toggle do dropdown - CORRIGIDO
+        dateFilterBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dateFilterDropdown.classList.toggle('active');
+        });
+        
+        // Fecha o dropdown ao clicar fora
+        document.addEventListener('click', function(e) {
+            if (!dateFilterDropdown.contains(e.target) && e.target !== dateFilterBtn) {
+                dateFilterDropdown.classList.remove('active');
+            }
+        });
+        
+        // Botões de predefinição
+        document.querySelectorAll('.date-preset-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const days = parseInt(this.dataset.days);
+                if (!isNaN(days)) {
+                    const endDate = new Date();
+                    const startDate = new Date();
+                    startDate.setDate(endDate.getDate() - days);
+                    
+                    startDateInput.value = formatDateForInput(startDate);
+                    endDateInput.value = formatDateForInput(endDate);
+                }
+            });
+        });
+        
+        // Aplicar filtro
+        applyDateFilterBtn.addEventListener('click', function() {
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+            
+            if (startDate && endDate) {
+                // Validação básica de datas
+                if (new Date(startDate) > new Date(endDate)) {
+                    alert('A data inicial não pode ser posterior à data final.');
+                    return;
+                }
+                
+                // Redireciona para a mesma página com parâmetros de data
+                const currentUrl = new URL(window.location.href);
+                
+                // Remove parâmetros existentes
+                currentUrl.searchParams.delete('start_date');
+                currentUrl.searchParams.delete('end_date');
+                currentUrl.searchParams.delete('show_all');
+                
+                // Adiciona novos parâmetros
+                currentUrl.searchParams.set('start_date', startDate);
+                currentUrl.searchParams.set('end_date', endDate);
+                
+                // Força recarregamento para garantir dados atualizados
+                window.location.href = currentUrl.toString();
+            } else {
+                alert('Por favor, selecione as datas inicial e final.');
+            }
+        });
+        
+        // Limpar filtro
+        clearDateFilterBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Limpa os inputs visualmente
+            startDateInput.value = '';
+            endDateInput.value = '';
+            
+            // Redireciona para a página com parâmetro show_all
+            const currentUrl = new URL(window.location.href);
+            
+            // Remove parâmetros existentes
+            currentUrl.searchParams.delete('start_date');
+            currentUrl.searchParams.delete('end_date');
+            
+            // Adiciona parâmetro show_all
+            currentUrl.searchParams.set('show_all', 'true');
+            
+            // Força recarregamento para garantir dados atualizados
+            window.location.href = currentUrl.toString();
+        });
+        
+        // Atualiza o texto do botão de filtro se o filtro estiver ativo
+        if (dateFilter.is_custom) {
+            const formattedStartDate = formatDateForDisplay(dateFilter.start_date);
+            const formattedEndDate = formatDateForDisplay(dateFilter.end_date);
+            
+            dateFilterText.textContent = `${formattedStartDate} - ${formattedEndDate}`;
+            dateFilterBtn.classList.add('active');
+        } else {
+            dateFilterText.textContent = 'Filtrar por Data';
+            dateFilterBtn.classList.remove('active');
+        }
+    }
+    
+    /**
+     * Carrega as preferências de visualização de gráficos do localStorage
+     */
+    function loadChartPreferences() {
+        try {
+            const savedPreferences = localStorage.getItem('reportChartPreferences');
+            if (savedPreferences) {
+                const preferences = JSON.parse(savedPreferences);
+                
+                // Aplica as preferências aos checkboxes
+                if (document.getElementById('stats-cards-toggle')) {
+                    document.getElementById('stats-cards-toggle').checked = preferences.stats !== false;
+                }
+                
+                if (document.getElementById('bar-chart-toggle')) {
+                    document.getElementById('bar-chart-toggle').checked = preferences.bar !== false;
+                }
+                
+                if (document.getElementById('pie-chart-toggle')) {
+                    document.getElementById('pie-chart-toggle').checked = preferences.pie !== false;
+                }
+                
+                if (document.getElementById('time-series-toggle')) {
+                    document.getElementById('time-series-toggle').checked = preferences.timeSeries !== false;
+                }
+                
+                // Atualiza a visibilidade dos gráficos
+                updateChartVisibility();
+            }
+        } catch (error) {
+            console.error('Erro ao carregar preferências de gráficos:', error);
+        }
+    }
+    
+    /**
+     * Formata uma data para exibição
+     * @param {string} dateString - String de data no formato YYYY-MM-DD
+     * @returns {string} - Data formatada como DD/MM/YYYY
+     */
+    function formatDateForDisplay(dateString) {
+        if (!dateString) return '';
+        
+        try {
+            const parts = dateString.split('-');
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        } catch (e) {
+            console.error('Erro ao formatar data:', e);
+            return dateString;
+        }
+    }
+    
+    /**
+     * Formata uma data para input
+     * @param {Date} date - Objeto Date
+     * @returns {string} - Data formatada como YYYY-MM-DD
+     */
+    function formatDateForInput(date) {
+        if (!date) return '';
+        
+        try {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            
+            return `${year}-${month}-${day}`;
+        } catch (e) {
+            console.error('Erro ao formatar data:', e);
+            return '';
+        }
+    }
+    
+    // Inicialização quando o DOM estiver pronto
     document.addEventListener('DOMContentLoaded', function() {
+        // Atualiza a data do relatório
         document.getElementById('report-date').textContent = new Date().toLocaleString('pt-BR');
         
+        // Inicializa os gráficos
         initCharts();
         
+        // Inicializa o filtro de data
+        initDateFilter();
+        
+        // Carrega preferências de visualização de gráficos
+        loadChartPreferences();
+        
+        // Configura os toggles de gráficos
         document.querySelectorAll('.chart-toggle').forEach(toggle => {
             toggle.addEventListener('change', updateChartVisibility);
         });
         
+        // Configura o botão de exportação de PDF
         document.getElementById('export-pdf-btn').addEventListener('click', generatePDF);
         
-        updateChartVisibility();
-        
+        // Configura o redimensionamento dos gráficos quando a janela for redimensionada
         window.addEventListener('resize', function() {
             if (classesChart) classesChart.resize();
             if (distributionChart) distributionChart.resize();
