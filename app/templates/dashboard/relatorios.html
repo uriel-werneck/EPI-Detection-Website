@@ -1259,21 +1259,140 @@
                 margin: { left: margin, right: margin }
             });
             
-            // Adiciona rodapé
             const pageCount = doc.internal.getNumberOfPages();
-            for (let i = 1; i <= pageCount; i++) {
-                doc.setPage(i);
-                doc.setFontSize(8);
-                doc.setTextColor(lightTextColor);
-                doc.text(`EPI Detection - Página ${i} de ${pageCount}`, margin, 290);
-                doc.text(`Gerado em: ${currentDate}`, pageWidth - margin - 50, 290, { align: 'right' });
+
+            function loadImage(src) {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.crossOrigin = "Anonymous";
+                    img.onload = () => resolve(img);
+                    img.onerror = () => {
+                        console.warn(`Não foi possível carregar a imagem: ${src}`);
+                        resolve(null); // Resolve com null em caso de erro
+                    };
+                    img.src = src;
+                });
             }
-            
-            // Salva o PDF
-            doc.save('relatorio-epi-detection.pdf');
-            
-            // Esconde o indicador de carregamento
-            document.getElementById('pdf-loading').style.display = 'none';
+
+            // Função para converter imagem para formato compatível com jsPDF usando canvas
+            function imageToDataURL(img, format = 'jpeg') {
+                if (!img) return null;
+                
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Definir tamanho do canvas
+                canvas.width = img.width;
+                canvas.height = img.height;
+                
+                // Desenhar imagem no canvas
+                ctx.drawImage(img, 0, 0);
+                
+                // Converter para data URL
+                try {
+                    return canvas.toDataURL(`image/${format}`);
+                } catch (e) {
+                    console.warn('Erro ao converter imagem:', e);
+                    return null;
+                }
+            }
+
+            // Função para manter a proporção da imagem
+            function calculateAspectRatioFit(srcWidth, srcHeight, maxWidth, maxHeight) {
+                const ratio = Math.min(maxWidth / srcWidth, maxHeight / srcHeight);
+                return { width: srcWidth * ratio, height: srcHeight * ratio };
+            }
+
+            // Carrega as imagens antes de adicioná-las ao PDF
+            Promise.all([
+                loadImage("{{ url_for('static', filename='images/ifma_gra.png') }}"),
+                loadImage("{{ url_for('static', filename='images/LOGO_fábrica.png') }}"),
+                loadImage("{{ url_for('static', filename='images/logo-projeto.svg') }}")
+            ]).then(images => {
+                // Filtra imagens nulas (que falharam ao carregar)
+                const validImages = images.filter(img => img !== null);
+                
+                // Converte imagens para formato compatível
+                const imageDataURLs = validImages.map(img => imageToDataURL(img, 'jpeg'));
+                
+                // Adiciona as imagens a cada página
+                for (let i = 1; i <= pageCount; i++) {
+                    doc.setPage(i);
+                    
+                    // Configurações para as imagens do rodapé - AUMENTADAS
+                    const maxImageWidth = 30; // largura máxima em mm (aumentada)
+                    const maxImageHeight = 15; // altura máxima em mm (aumentada)
+                    const footerImagesY = 270; // posição Y ajustada para cima
+                    
+                    // Calcula o espaço total disponível
+                    const availableWidth = pageWidth - (margin * 2);
+                    
+                    // Espaçamento dinâmico baseado no número de imagens
+                    const imageCount = imageDataURLs.length;
+                    const spacing = availableWidth / (imageCount + 1);
+                    
+                    try {
+                        // Para cada imagem válida
+                        imageDataURLs.forEach((dataURL, j) => {
+                            if (!dataURL) return; // Pula se não houver dataURL
+                            
+                            const img = validImages[j];
+                            
+                            // Calcula dimensões mantendo proporção
+                            const dimensions = calculateAspectRatioFit(
+                                img.width, 
+                                img.height, 
+                                maxImageWidth, 
+                                maxImageHeight
+                            );
+                            
+                            // Posiciona as imagens uniformemente ao longo da largura da página
+                            const imgX = margin + spacing * (j + 1) - (dimensions.width / 2);
+                            
+                            // Adiciona a imagem ao PDF usando o dataURL convertido
+                            doc.addImage(
+                                dataURL, 
+                                'JPEG', 
+                                imgX, 
+                                footerImagesY, 
+                                dimensions.width, 
+                                dimensions.height
+                            );
+                        });
+                    } catch (error) {
+                        console.error('Erro ao adicionar imagens ao rodapé:', error);
+                    }
+                    
+                    // Adiciona o texto do rodapé (mantém o texto original)
+                    doc.setFontSize(8);
+                    doc.setTextColor(lightTextColor);
+                    doc.text(`EPI Detection - Página ${i} de ${pageCount}`, margin, 290);
+                    doc.text(`Gerado em: ${currentDate}`, pageWidth - margin - 50, 290, { align: 'right' });
+                }
+                
+                // Salva o PDF
+                doc.save('relatorio-epi-detection.pdf');
+                
+                // Esconde o indicador de carregamento
+                document.getElementById('pdf-loading').style.display = 'none';
+            }).catch(error => {
+                console.error('Erro ao processar imagens:', error);
+                
+                // Continua com a geração do PDF mesmo sem as imagens
+                for (let i = 1; i <= pageCount; i++) {
+                    doc.setPage(i);
+                    doc.setFontSize(8);
+                    doc.setTextColor(lightTextColor);
+                    doc.text(`EPI Detection - Página ${i} de ${pageCount}`, margin, 290);
+                    doc.text(`Gerado em: ${currentDate}`, pageWidth - margin - 50, 290, { align: 'right' });
+                }
+                
+                // Salva o PDF
+                doc.save('relatorio-epi-detection.pdf');
+                
+                // Esconde o indicador de carregamento
+                document.getElementById('pdf-loading').style.display = 'none';
+            });
             
         } catch (error) {
             console.error('Erro na geração do PDF:', error);
