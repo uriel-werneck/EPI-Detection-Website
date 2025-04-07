@@ -1259,8 +1259,11 @@
                 margin: { left: margin, right: margin }
             });
             
+            // Adiciona rodapé com imagens
+            // Adiciona rodapé com imagens
             const pageCount = doc.internal.getNumberOfPages();
 
+            // Função para pré-carregar imagens com tratamento de erros
             function loadImage(src) {
                 return new Promise((resolve) => {
                     const img = new Image();
@@ -1268,14 +1271,21 @@
                     img.onload = () => resolve(img);
                     img.onerror = () => {
                         console.warn(`Não foi possível carregar a imagem: ${src}`);
-                        resolve(null); // Resolve com null em caso de erro
+                        resolve(null);
                     };
                     img.src = src;
                 });
             }
 
+            // Função para manter a proporção da imagem
+            function calculateAspectRatioFit(srcWidth, srcHeight, maxWidth, maxHeight) {
+                const ratio = Math.min(maxWidth / srcWidth, maxHeight / srcHeight);
+                return { width: srcWidth * ratio, height: srcHeight * ratio };
+            }
+
             // Função para converter imagem para formato compatível com jsPDF usando canvas
-            function imageToDataURL(img, format = 'jpeg') {
+            // e remover o fundo preto
+            function imageToDataURL(img, format = 'png') {
                 if (!img) return null;
                 
                 const canvas = document.createElement('canvas');
@@ -1284,6 +1294,10 @@
                 // Definir tamanho do canvas
                 canvas.width = img.width;
                 canvas.height = img.height;
+                
+                // Preencher com fundo branco para remover qualquer transparência
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
                 // Desenhar imagem no canvas
                 ctx.drawImage(img, 0, 0);
@@ -1297,12 +1311,6 @@
                 }
             }
 
-            // Função para manter a proporção da imagem
-            function calculateAspectRatioFit(srcWidth, srcHeight, maxWidth, maxHeight) {
-                const ratio = Math.min(maxWidth / srcWidth, maxHeight / srcHeight);
-                return { width: srcWidth * ratio, height: srcHeight * ratio };
-            }
-
             // Carrega as imagens antes de adicioná-las ao PDF
             Promise.all([
                 loadImage("{{ url_for('static', filename='images/ifma_gra.png') }}"),
@@ -1313,23 +1321,25 @@
                 const validImages = images.filter(img => img !== null);
                 
                 // Converte imagens para formato compatível
-                const imageDataURLs = validImages.map(img => imageToDataURL(img, 'jpeg'));
+                const imageDataURLs = validImages.map(img => imageToDataURL(img, 'png'));
                 
                 // Adiciona as imagens a cada página
                 for (let i = 1; i <= pageCount; i++) {
                     doc.setPage(i);
                     
-                    // Configurações para as imagens do rodapé - AUMENTADAS
-                    const maxImageWidth = 30; // largura máxima em mm (aumentada)
-                    const maxImageHeight = 15; // altura máxima em mm (aumentada)
-                    const footerImagesY = 270; // posição Y ajustada para cima
+                    // Configurações para as imagens do rodapé - AUMENTADAS AINDA MAIS
+                    const maxImageWidth = 40; // largura máxima em mm (aumentada)
+                    const maxImageHeight = 20; // altura máxima em mm (aumentada)
+                    const footerTextY = 290; // posição Y do texto do rodapé
+                    const footerImagesY = footerTextY - 25; // posiciona as imagens 25mm acima do texto
                     
                     // Calcula o espaço total disponível
                     const availableWidth = pageWidth - (margin * 2);
                     
-                    // Espaçamento dinâmico baseado no número de imagens
+                    // Espaçamento fixo para melhor alinhamento
                     const imageCount = imageDataURLs.length;
-                    const spacing = availableWidth / (imageCount + 1);
+                    const totalImageWidth = maxImageWidth * imageCount;
+                    const spacing = (availableWidth - totalImageWidth) / (imageCount + 1);
                     
                     try {
                         // Para cada imagem válida
@@ -1346,15 +1356,19 @@
                                 maxImageHeight
                             );
                             
-                            // Posiciona as imagens uniformemente ao longo da largura da página
-                            const imgX = margin + spacing * (j + 1) - (dimensions.width / 2);
+                            // Posiciona as imagens com espaçamento uniforme
+                            const imgX = margin + spacing * (j + 1) + (maxImageWidth * j) - (dimensions.width / 2);
+                            
+                            // Centraliza verticalmente todas as imagens para ficarem alinhadas
+                            // Todas as imagens terão a mesma altura visual
+                            const imgY = footerImagesY + ((maxImageHeight - dimensions.height) / 2);
                             
                             // Adiciona a imagem ao PDF usando o dataURL convertido
                             doc.addImage(
                                 dataURL, 
-                                'JPEG', 
+                                'PNG', 
                                 imgX, 
-                                footerImagesY, 
+                                imgY, 
                                 dimensions.width, 
                                 dimensions.height
                             );
@@ -1366,8 +1380,8 @@
                     // Adiciona o texto do rodapé (mantém o texto original)
                     doc.setFontSize(8);
                     doc.setTextColor(lightTextColor);
-                    doc.text(`EPI Detection - Página ${i} de ${pageCount}`, margin, 290);
-                    doc.text(`Gerado em: ${currentDate}`, pageWidth - margin - 50, 290, { align: 'right' });
+                    doc.text(`EPI Detection - Página ${i} de ${pageCount}`, margin, footerTextY);
+                    doc.text(`Gerado em: ${currentDate}`, pageWidth - margin - 50, footerTextY, { align: 'right' });
                 }
                 
                 // Salva o PDF
