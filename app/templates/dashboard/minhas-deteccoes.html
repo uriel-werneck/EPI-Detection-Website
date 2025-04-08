@@ -260,12 +260,21 @@
                             <div class="mb-3">
                                 <p class="text-sm text-gray-500 mb-1">Objetos detectados: {{ detection.quantity }}</p>
                                 <div class="flex flex-wrap">
+                                    {% set class_counts = {} %}
                                     {% for class in detection.classes %}
                                         {% if class %}
-                                            <span class="badge badge-{{ ['blue', 'purple', 'green', 'yellow', 'orange', 'red'][loop.index0 % 6] }}">
-                                                {{ class }}
-                                            </span>
+                                            {% if class in class_counts %}
+                                                {% set _ = class_counts.update({class: class_counts[class] + 1}) %}
+                                            {% else %}
+                                                {% set _ = class_counts.update({class: 1}) %}
+                                            {% endif %}
                                         {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% for class, count in class_counts.items() %}
+                                        <span class="badge badge-{{ ['blue', 'purple', 'green', 'yellow', 'orange', 'red'][loop.index0 % 6] }}">
+                                            {{ class }}: {{ count }}
+                                        </span>
                                     {% endfor %}
                                 </div>
                             </div>
@@ -385,4 +394,3 @@
     });
 </script>
 {% endblock %}
-
