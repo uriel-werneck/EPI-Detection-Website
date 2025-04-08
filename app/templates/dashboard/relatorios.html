@@ -16,6 +16,11 @@
         max-height: 50px;
         width: auto;
     }
+
+    .fabin-ifma-logo {
+        max-height: 100px;
+        width: auto;
+    }
     
     .pdf-loading {
         position: fixed;
@@ -502,7 +507,9 @@
                 <p class="report-meta">Período: {{ detection_stats.date_filter.start_date|default('') }} a {{ detection_stats.date_filter.end_date|default('') }}</p>
                 {% endif %}
             </div>
-            <img src="{{ url_for('static', filename='images/logo-projeto.svg') }}" alt="SafetyAI Logo" class="report-logo" />
+            <img src="{{ url_for('static', filename='images/LOGO_fábrica.png') }}" alt="LOGO FÁBRICA" class="fabin-ifma-logo" />
+            <img src="{{ url_for('static', filename='images/ifma_gra.png') }}" alt="IFMA Logo" class="fabin-ifma-logo" />
+            <img src="{{ url_for('static', filename='images/logo-projeto.svg') }}" alt="EPI DETECT LOGO" class="report-logo" />
         </div>
 
         <!-- Stats Cards Section (Improved) -->
