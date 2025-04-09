@@ -41,11 +41,7 @@
                 </div>
                 
                 <div class="flex items-center space-x-4">
-                    <a href="/home" class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 {% if request.endpoint == 'home' %}bg-primary/10 text-primary{% else %}text-gray-600 hover:bg-gray-100{% endif %}">
-                        <i data-lucide="home" class="h-4 w-4"></i>
-                        Dashboard
-                    </a>
-
+                   
                     <div class="relative" x-data="{ isOpen: false }">
                         <button 
                             @mouseenter="isOpen = true"
@@ -72,9 +68,10 @@
                                         Upload de Imagem
                                     </div>
                                 </a>
+                               
                                 <a 
-                                    class="block px-4 py-2 text-sm hover:bg-gray-100 text-gray-400 cursor-not-allowed"
-                                    aria-disabled="true"
+                                    href="{{ url_for('upload', type='upload-video') }}"
+                                    class="block px-4 py-2 text-sm hover:bg-gray-100 {% if request.path == url_for('upload', type='upload-video') %}bg-primary/10 text-primary{% else %}text-gray-700{% endif %}"
                                 >
                                     <div class="flex items-center gap-2">
                                         <i data-lucide="video" class="h-4 w-4"></i>
@@ -84,6 +81,11 @@
                             </div>
                         </div>
                     </div>
+
+                    <a href="/home" class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 {% if request.endpoint == 'home' %}bg-primary/10 text-primary{% else %}text-gray-600 hover:bg-gray-100{% endif %}">
+                        <i data-lucide="home" class="h-4 w-4"></i>
+                        Dashboard
+                    </a>
 
                     <a href="/relatorios" class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 {% if request.endpoint == 'relatorios' %}bg-primary/10 text-primary{% else %}text-gray-600 hover:bg-gray-100{% endif %}">
                         <i data-lucide="file-bar-chart" class="h-4 w-4"></i>
@@ -156,4 +158,3 @@
     {% block scripts %}{% endblock %}
 </body>
 </html>
-

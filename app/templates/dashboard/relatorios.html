@@ -4,7 +4,6 @@
 
 {% block styles %}
 <style>
-    /* Estilos para a página web */
     .chart-selection-item {
         transition: all 0.2s ease;
     }
@@ -17,8 +16,12 @@
         max-height: 50px;
         width: auto;
     }
+
+    .fabin-ifma-logo {
+        max-height: 100px;
+        width: auto;
+    }
     
-    /* Estilos para o indicador de carregamento do PDF */
     .pdf-loading {
         position: fixed;
         top: 0;
@@ -172,7 +175,6 @@
         border-color: #cbd5e0;
     }
     
-    /* Estilos para os cards de estatísticas */
     .stats-card {
         border-radius: 8px;
         padding: 16px;
@@ -237,7 +239,6 @@
         color: #059669;
     }
     
-    /* Estilos para os gráficos */
     .chart-container {
         background-color: white;
         border-radius: 8px;
@@ -251,7 +252,6 @@
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
     
-    /* Estilos para o seletor de gráficos - MELHORADO */
     .chart-selection-container {
         background-color: white;
         border-radius: 8px;
@@ -291,7 +291,6 @@
         cursor: pointer;
     }
     
-    /* Estilos para o cabeçalho do relatório */
     .report-header {
         display: flex;
         justify-content: space-between;
@@ -314,7 +313,6 @@
         margin-bottom: 2px;
     }
     
-    /* Estilos para as seções do relatório */
     .report-section {
         margin-bottom: 24px;
     }
@@ -328,7 +326,6 @@
         border-bottom: 1px solid #e2e8f0;
     }
     
-    /* Layout responsivo para os gráficos */
     .charts-grid {
         display: grid;
         grid-template-columns: 1fr;
@@ -341,14 +338,12 @@
         }
     }
     
-    /* Botão ativo para filtro de data */
     .date-filter-btn.active {
         background-color: #EEF2FF;
         color: #4361ee;
         border-color: #C7D2FE;
     }
     
-    /* Estilo para checkbox personalizado - NOVO */
     .custom-checkbox {
         display: flex;
         align-items: center;
@@ -512,7 +507,9 @@
                 <p class="report-meta">Período: {{ detection_stats.date_filter.start_date|default('') }} a {{ detection_stats.date_filter.end_date|default('') }}</p>
                 {% endif %}
             </div>
-            <img src="{{ url_for('static', filename='images/logo-projeto.svg') }}" alt="SafetyAI Logo" class="report-logo" />
+            <img src="{{ url_for('static', filename='images/LOGO_fábrica.png') }}" alt="LOGO FÁBRICA" class="fabin-ifma-logo" />
+            <img src="{{ url_for('static', filename='images/ifma_gra.png') }}" alt="IFMA Logo" class="fabin-ifma-logo" />
+            <img src="{{ url_for('static', filename='images/logo-projeto.svg') }}" alt="EPI DETECT LOGO" class="report-logo" />
         </div>
 
         <!-- Stats Cards Section (Improved) -->
@@ -577,25 +574,18 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
 <script>
-    // Dados do backend
     const detectedClasses = JSON.parse('{{ detection_stats.detected_classes | tojson | safe }}');
     const timeSeriesData = JSON.parse('{{ detection_stats.time_series_data | tojson | safe }}');
     const dateFilter = JSON.parse('{{ detection_stats.date_filter | tojson | safe }}');
     
-    // Paleta de cores otimizada
     const colorPalette = [
         '#4361ee', '#3a0ca3', '#7209b7', '#f72585', '#4cc9f0', 
         '#4895ef', '#560bad', '#f15bb5', '#00bbf9', '#00f5d4'
     ];
     
-    // Referências aos gráficos
     let classesChart, distributionChart, timeSeriesChart;
     
-    /**
-     * Inicializa os gráficos com configurações otimizadas
-     */
     function initCharts() {
-        // Configurações comuns para todos os gráficos
         const commonOptions = {
             responsive: true,
             maintainAspectRatio: false,
@@ -614,7 +604,6 @@
             }
         };
         
-        // Gráfico de barras
         const classesCtx = document.getElementById('classesChart');
         classesChart = new Chart(classesCtx, {
             type: 'bar',
@@ -696,7 +685,6 @@
             }
         });
 
-        // Gráfico de pizza
         const distributionCtx = document.getElementById('distributionChart');
         distributionChart = new Chart(distributionCtx, {
             type: 'pie',
@@ -767,7 +755,6 @@
             }
         });
 
-        // Gráfico de série temporal
         const timeSeriesCtx = document.getElementById('timeSeriesChart');
         timeSeriesChart = new Chart(timeSeriesCtx, {
             type: 'line',
@@ -880,17 +867,12 @@
         });
     }
     
-    /**
-     * Atualiza a visibilidade dos gráficos com base nas seleções do usuário
-     * CORRIGIDO: Agora realmente mostra/oculta as seções conforme selecionado
-     */
     function updateChartVisibility() {
         const statsCardsVisible = document.getElementById('stats-cards-toggle').checked;
         const barChartVisible = document.getElementById('bar-chart-toggle').checked;
         const pieChartVisible = document.getElementById('pie-chart-toggle').checked;
         const timeSeriesVisible = document.getElementById('time-series-toggle').checked;
         
-        // Atualiza a visibilidade das seções
         const statsSection = document.getElementById('stats-cards-section');
         const barSection = document.getElementById('bar-chart-section');
         const pieSection = document.getElementById('pie-chart-section');
@@ -912,7 +894,6 @@
             timeSeriesSection.style.display = timeSeriesVisible ? 'block' : 'none';
         }
         
-        // Salva as preferências no localStorage para persistir entre sessões
         const preferences = {
             stats: statsCardsVisible,
             bar: barChartVisible,
@@ -922,42 +903,30 @@
         
         localStorage.setItem('reportChartPreferences', JSON.stringify(preferences));
         
-        // Redimensiona os gráficos visíveis para melhor visualização
         setTimeout(() => {
             window.dispatchEvent(new Event('resize'));
             
-            // Atualiza os gráficos visíveis
             if (barChartVisible && classesChart) classesChart.resize();
             if (pieChartVisible && distributionChart) distributionChart.resize();
             if (timeSeriesVisible && timeSeriesChart) timeSeriesChart.resize();
         }, 100);
     }
     
-    /**
-     * Gera um PDF otimizado do relatório usando jsPDF
-     * Esta versão cria um PDF formatado especificamente para impressão
-     * em vez de simplesmente capturar a tela
-     */
     async function generatePDF() {
         try {
-            // Exibe o indicador de carregamento
             document.getElementById('pdf-loading').style.display = 'flex';
             
-            // Obtém os dados necessários
             const totalImages = parseInt(document.querySelector('.stats-card-purple .stats-card-value').textContent);
             const totalVideos = parseInt(document.querySelector('.stats-card-green .stats-card-value').textContent);
             
-            // Calcula totais e percentuais para o gráfico de pizza
             const objectClasses = Object.keys(detectedClasses);
             const objectValues = Object.values(detectedClasses);
             const totalObjects = objectValues.reduce((a, b) => a + b, 0);
             
-            // Prepara dados para a tabela de evolução temporal
             const dates = timeSeriesData.dates;
             const detections = timeSeriesData.detections;
             const uploads = timeSeriesData.uploads;
             
-            // Cria um novo documento PDF
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({
                 orientation: 'portrait',
@@ -965,28 +934,23 @@
                 format: 'a4'
             });
             
-            // Configurações de fonte e cores
             const primaryColor = '#4361ee';
             const secondaryColor = '#f72585';
             const textColor = '#1F2937';
             const lightTextColor = '#6B7280';
             
-            // Margens do documento
             const margin = 15;
             const pageWidth = 210;
             const contentWidth = pageWidth - (margin * 2);
             
-            // Posição Y atual (para controle de posicionamento)
             let yPos = margin;
             
-            // Adiciona cabeçalho do relatório
             doc.setFontSize(20);
             doc.setTextColor(textColor);
             doc.setFont('helvetica', 'bold');
             doc.text('Relatório de Detecção de EPIs', margin, yPos);
             yPos += 10;
             
-            // Adiciona metadados do relatório
             doc.setFontSize(10);
             doc.setTextColor(lightTextColor);
             doc.setFont('helvetica', 'normal');
@@ -1004,19 +968,16 @@
                 yPos += 5;
             }
             
-            // Adiciona linha separadora
             yPos += 5;
             doc.setDrawColor(220, 220, 220);
             doc.line(margin, yPos, pageWidth - margin, yPos);
             yPos += 10;
             
-            // Verifica quais seções devem ser incluídas no PDF
             const includeStats = document.getElementById('stats-cards-toggle').checked;
             const includeBarChart = document.getElementById('bar-chart-toggle').checked;
             const includePieChart = document.getElementById('pie-chart-toggle').checked;
             const includeTimeSeries = document.getElementById('time-series-toggle').checked;
             
-            // Seção 1: Estatísticas de Upload (se selecionada)
             if (includeStats) {
                 doc.setFontSize(14);
                 doc.setTextColor(textColor);
@@ -1024,7 +985,6 @@
                 doc.text('Estatísticas de Upload', margin, yPos);
                 yPos += 10;
                 
-                // Cria tabela de estatísticas
                 const statsData = [
                     ['Tipo', 'Quantidade'],
                     ['Uploads de Imagens', totalImages.toString()],
@@ -1055,7 +1015,6 @@
                 yPos = doc.lastAutoTable.finalY + 15;
             }
             
-            // Seção 2: Quantidade de Objetos Detectados (se selecionada)
             if (includeBarChart) {
                 doc.setFontSize(14);
                 doc.setTextColor(textColor);
@@ -1063,7 +1022,6 @@
                 doc.text('Quantidade de Objetos Detectados', margin, yPos);
                 yPos += 10;
                 
-                // Cria tabela de objetos detectados
                 const objectsData = [
                     ['Objeto', 'Quantidade', 'Percentual']
                 ];
@@ -1074,7 +1032,6 @@
                     objectsData.push([className, value.toString(), percentage]);
                 });
                 
-                // Adiciona linha de total
                 objectsData.push(['Total', totalObjects.toString(), '100%']);
                 
                 doc.autoTable({
@@ -1107,22 +1064,18 @@
                 yPos = doc.lastAutoTable.finalY + 15;
             }
             
-            // Verifica se precisa adicionar nova página
             if (yPos > 250) {
                 doc.addPage();
                 yPos = margin;
             }
             
-            // Seção 3: Distribuição dos Objetos (se selecionada)
             if (includePieChart && !includeBarChart) {
-                // Se o gráfico de barras já foi incluído, não precisamos repetir esta informação
                 doc.setFontSize(14);
                 doc.setTextColor(textColor);
                 doc.setFont('helvetica', 'bold');
                 doc.text('Distribuição dos Objetos', margin, yPos);
                 yPos += 10;
                 
-                // Cria tabela de distribuição
                 const distributionData = [
                     ['Objeto', 'Percentual']
                 ];
@@ -1157,7 +1110,6 @@
                 yPos = doc.lastAutoTable.finalY + 15;
             }
             
-            // Seção 4: Evolução da Detecção de Objetos por Data (se selecionada)
             if (includeTimeSeries) {
                 if (yPos > 200) {
                     doc.addPage();
@@ -1170,12 +1122,10 @@
                 doc.text('Evolução da Detecção de Objetos por Data', margin, yPos);
                 yPos += 10;
                 
-                // Cria tabela de evolução temporal
                 const timeSeriesTableData = [
                     ['Data', 'Objetos Detectados', 'Uploads de Imagens']
                 ];
                 
-                // Adiciona apenas os últimos 10 registros para não sobrecarregar o PDF
                 const maxEntries = Math.min(dates.length, 10);
                 const startIndex = dates.length - maxEntries;
                 
@@ -1212,7 +1162,6 @@
                 yPos = doc.lastAutoTable.finalY + 15;
             }
             
-            // Adiciona resumo estatístico
             if (yPos > 250) {
                 doc.addPage();
                 yPos = margin;
@@ -1224,7 +1173,6 @@
             doc.text('Resumo Estatístico', margin, yPos);
             yPos += 10;
             
-            // Calcula estatísticas
             const totalDetections = detections.reduce((a, b) => a + b, 0);
             const avgDetectionsPerDay = (totalDetections / dates.length).toFixed(1);
             const maxDetections = Math.max(...detections);
@@ -1258,36 +1206,135 @@
                 },
                 margin: { left: margin, right: margin }
             });
-            
-            // Adiciona rodapé
+
             const pageCount = doc.internal.getNumberOfPages();
-            for (let i = 1; i <= pageCount; i++) {
-                doc.setPage(i);
-                doc.setFontSize(8);
-                doc.setTextColor(lightTextColor);
-                doc.text(`EPI Detection - Página ${i} de ${pageCount}`, margin, 290);
-                doc.text(`Gerado em: ${currentDate}`, pageWidth - margin - 50, 290, { align: 'right' });
+
+            function loadImage(src) {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.crossOrigin = "Anonymous";
+                    img.onload = () => resolve(img);
+                    img.onerror = () => {
+                        console.warn(`Não foi possível carregar a imagem: ${src}`);
+                        resolve(null);
+                    };
+                    img.src = src;
+                });
             }
-            
-            // Salva o PDF
-            doc.save('relatorio-epi-detection.pdf');
-            
-            // Esconde o indicador de carregamento
-            document.getElementById('pdf-loading').style.display = 'none';
+
+            function calculateAspectRatioFit(srcWidth, srcHeight, maxWidth, maxHeight) {
+                const ratio = Math.min(maxWidth / srcWidth, maxHeight / srcHeight);
+                return { width: srcWidth * ratio, height: srcHeight * ratio };
+            }
+
+            function imageToDataURL(img, format = 'png') {
+                if (!img) return null;
+                
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                canvas.width = img.width;
+                canvas.height = img.height;
+                
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.drawImage(img, 0, 0);
+                
+                try {
+                    return canvas.toDataURL(`image/${format}`);
+                } catch (e) {
+                    console.warn('Erro ao converter imagem:', e);
+                    return null;
+                }
+            }
+
+            Promise.all([
+                loadImage("{{ url_for('static', filename='images/ifma_gra.png') }}"),
+                loadImage("{{ url_for('static', filename='images/LOGO_fábrica.png') }}"),
+                loadImage("{{ url_for('static', filename='images/logo-projeto.svg') }}")
+            ]).then(images => {
+                const validImages = images.filter(img => img !== null);
+                
+                const imageDataURLs = validImages.map(img => imageToDataURL(img, 'png'));
+                
+                for (let i = 1; i <= pageCount; i++) {
+                    doc.setPage(i);
+                    
+                    const maxImageWidth = 40; 
+                    const maxImageHeight = 20; 
+                    const footerTextY = 290; 
+                    const footerImagesY = footerTextY - 25; 
+                    
+                    const availableWidth = pageWidth - (margin * 2);
+                    
+                    const imageCount = imageDataURLs.length;
+                    const totalImageWidth = maxImageWidth * imageCount;
+                    const spacing = (availableWidth - totalImageWidth) / (imageCount + 1);
+                    
+                    try {
+                        imageDataURLs.forEach((dataURL, j) => {
+                            if (!dataURL) return; 
+                            
+                            const img = validImages[j];
+                            
+                            const dimensions = calculateAspectRatioFit(
+                                img.width, 
+                                img.height, 
+                                maxImageWidth, 
+                                maxImageHeight
+                            );
+                            
+                            const imgX = margin + spacing * (j + 1) + (maxImageWidth * j) - (dimensions.width / 2);
+       
+                            const imgY = footerImagesY + ((maxImageHeight - dimensions.height) / 2);
+                            
+                            doc.addImage(
+                                dataURL, 
+                                'PNG', 
+                                imgX, 
+                                imgY, 
+                                dimensions.width, 
+                                dimensions.height
+                            );
+                        });
+                    } catch (error) {
+                        console.error('Erro ao adicionar imagens ao rodapé:', error);
+                    }
+                    
+                    doc.setFontSize(8);
+                    doc.setTextColor(lightTextColor);
+                    doc.text(`EPI Detection - Página ${i} de ${pageCount}`, margin, footerTextY);
+                    doc.text(`Gerado em: ${currentDate}`, pageWidth - margin - 50, footerTextY, { align: 'right' });
+                }
+                
+                doc.save('relatorio-epi-detection.pdf');
+                
+                document.getElementById('pdf-loading').style.display = 'none';
+            }).catch(error => {
+                console.error('Erro ao processar imagens:', error);
+                
+                for (let i = 1; i <= pageCount; i++) {
+                    doc.setPage(i);
+                    doc.setFontSize(8);
+                    doc.setTextColor(lightTextColor);
+                    doc.text(`EPI Detection - Página ${i} de ${pageCount}`, margin, 290);
+                    doc.text(`Gerado em: ${currentDate}`, pageWidth - margin - 50, 290, { align: 'right' });
+                }
+                
+                doc.save('relatorio-epi-detection.pdf');
+                
+                document.getElementById('pdf-loading').style.display = 'none';
+            });
             
         } catch (error) {
             console.error('Erro na geração do PDF:', error);
             alert('Ocorreu um erro ao gerar o PDF. Por favor, tente novamente.');
             
-            // Esconde o indicador de carregamento em caso de erro
             document.getElementById('pdf-loading').style.display = 'none';
         }
     }
     
-    /**
-     * Inicializa o filtro de data
-     * CORRIGIDO: Posicionamento do dropdown
-     */
     function initDateFilter() {
         const dateFilterBtn = document.getElementById('date-filter-btn');
         const dateFilterDropdown = document.getElementById('date-filter-dropdown');
@@ -1297,7 +1344,6 @@
         const endDateInput = document.getElementById('end-date');
         const dateFilterText = document.getElementById('date-filter-text');
         
-        // Define valores iniciais dos inputs a partir dos parâmetros da URL ou dados do filtro
         const urlParams = new URLSearchParams(window.location.search);
         const startDateParam = urlParams.get('start_date') || dateFilter.start_date;
         const endDateParam = urlParams.get('end_date') || dateFilter.end_date;
@@ -1310,20 +1356,17 @@
             endDateInput.value = endDateParam;
         }
         
-        // Toggle do dropdown - CORRIGIDO
         dateFilterBtn.addEventListener('click', function(e) {
             e.stopPropagation();
             dateFilterDropdown.classList.toggle('active');
         });
         
-        // Fecha o dropdown ao clicar fora
         document.addEventListener('click', function(e) {
             if (!dateFilterDropdown.contains(e.target) && e.target !== dateFilterBtn) {
                 dateFilterDropdown.classList.remove('active');
             }
         });
         
-        // Botões de predefinição
         document.querySelectorAll('.date-preset-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const days = parseInt(this.dataset.days);
@@ -1338,60 +1381,47 @@
             });
         });
         
-        // Aplicar filtro
         applyDateFilterBtn.addEventListener('click', function() {
             const startDate = startDateInput.value;
             const endDate = endDateInput.value;
             
             if (startDate && endDate) {
-                // Validação básica de datas
                 if (new Date(startDate) > new Date(endDate)) {
                     alert('A data inicial não pode ser posterior à data final.');
                     return;
                 }
                 
-                // Redireciona para a mesma página com parâmetros de data
                 const currentUrl = new URL(window.location.href);
                 
-                // Remove parâmetros existentes
                 currentUrl.searchParams.delete('start_date');
                 currentUrl.searchParams.delete('end_date');
                 currentUrl.searchParams.delete('show_all');
                 
-                // Adiciona novos parâmetros
                 currentUrl.searchParams.set('start_date', startDate);
                 currentUrl.searchParams.set('end_date', endDate);
                 
-                // Força recarregamento para garantir dados atualizados
                 window.location.href = currentUrl.toString();
             } else {
                 alert('Por favor, selecione as datas inicial e final.');
             }
         });
         
-        // Limpar filtro
         clearDateFilterBtn.addEventListener('click', function(e) {
             e.preventDefault();
             
-            // Limpa os inputs visualmente
             startDateInput.value = '';
             endDateInput.value = '';
             
-            // Redireciona para a página com parâmetro show_all
             const currentUrl = new URL(window.location.href);
             
-            // Remove parâmetros existentes
             currentUrl.searchParams.delete('start_date');
             currentUrl.searchParams.delete('end_date');
             
-            // Adiciona parâmetro show_all
             currentUrl.searchParams.set('show_all', 'true');
             
-            // Força recarregamento para garantir dados atualizados
             window.location.href = currentUrl.toString();
         });
         
-        // Atualiza o texto do botão de filtro se o filtro estiver ativo
         if (dateFilter.is_custom) {
             const formattedStartDate = formatDateForDisplay(dateFilter.start_date);
             const formattedEndDate = formatDateForDisplay(dateFilter.end_date);
@@ -1404,16 +1434,12 @@
         }
     }
     
-    /**
-     * Carrega as preferências de visualização de gráficos do localStorage
-     */
     function loadChartPreferences() {
         try {
             const savedPreferences = localStorage.getItem('reportChartPreferences');
             if (savedPreferences) {
                 const preferences = JSON.parse(savedPreferences);
                 
-                // Aplica as preferências aos checkboxes
                 if (document.getElementById('stats-cards-toggle')) {
                     document.getElementById('stats-cards-toggle').checked = preferences.stats !== false;
                 }
@@ -1430,7 +1456,6 @@
                     document.getElementById('time-series-toggle').checked = preferences.timeSeries !== false;
                 }
                 
-                // Atualiza a visibilidade dos gráficos
                 updateChartVisibility();
             }
         } catch (error) {
@@ -1438,11 +1463,6 @@
         }
     }
     
-    /**
-     * Formata uma data para exibição
-     * @param {string} dateString - String de data no formato YYYY-MM-DD
-     * @returns {string} - Data formatada como DD/MM/YYYY
-     */
     function formatDateForDisplay(dateString) {
         if (!dateString) return '';
         
@@ -1455,11 +1475,7 @@
         }
     }
     
-    /**
-     * Formata uma data para input
-     * @param {Date} date - Objeto Date
-     * @returns {string} - Data formatada como YYYY-MM-DD
-     */
+
     function formatDateForInput(date) {
         if (!date) return '';
         
@@ -1475,29 +1491,21 @@
         }
     }
     
-    // Inicialização quando o DOM estiver pronto
     document.addEventListener('DOMContentLoaded', function() {
-        // Atualiza a data do relatório
         document.getElementById('report-date').textContent = new Date().toLocaleString('pt-BR');
         
-        // Inicializa os gráficos
         initCharts();
         
-        // Inicializa o filtro de data
         initDateFilter();
         
-        // Carrega preferências de visualização de gráficos
         loadChartPreferences();
         
-        // Configura os toggles de gráficos
         document.querySelectorAll('.chart-toggle').forEach(toggle => {
             toggle.addEventListener('change', updateChartVisibility);
         });
         
-        // Configura o botão de exportação de PDF
         document.getElementById('export-pdf-btn').addEventListener('click', generatePDF);
         
-        // Configura o redimensionamento dos gráficos quando a janela for redimensionada
         window.addEventListener('resize', function() {
             if (classesChart) classesChart.resize();
             if (distributionChart) distributionChart.resize();
