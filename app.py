@@ -333,6 +333,8 @@ def login():
 def logout():
     logout_user()
     session.pop('user_id', None)
+    if '_flashes' in session:
+        session['_flashes'].clear()
     return redirect(url_for('index'))
 
 def can_register(email: str, senha: str, confirmar_senha: str, cpf: str) -> bool:
