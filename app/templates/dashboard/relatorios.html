@@ -394,6 +394,22 @@
     .custom-checkbox input:checked ~ .checkmark:after {
         display: block;
     }
+
+    .media-filter-container {
+        position: relative;
+    }
+
+    #media-type-filter {
+        appearance: auto;
+        background-color: white;
+        cursor: pointer;
+    }
+
+    #media-type-filter:focus {
+        border-color: #4361ee;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+    }
 </style>
 {% endblock %}
 
@@ -454,6 +470,15 @@
                         </button>
                     </div>
                 </div>
+            </div>
+            
+            <!-- Media Type Filter -->
+            <div class="media-filter-container">
+                <select id="media-type-filter" class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium gap-2 text-gray-600 hover:bg-gray-100 border no-print">
+                    <option value="all">Todos os tipos</option>
+                    <option value="image">Apenas imagens</option>
+                    <option value="video">Apenas vídeos</option>
+                </select>
             </div>
             
             <!-- Export PDF Button -->
@@ -967,6 +992,15 @@
                 doc.text(`Período: ${dateFilter.start_date} a ${dateFilter.end_date}`, margin, yPos);
                 yPos += 5;
             }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const mediaTypeParam = urlParams.get('media_type');
+            if (mediaTypeParam) {
+                const mediaTypeText = mediaTypeParam === 'image' ? 'Apenas imagens' : 
+                                     (mediaTypeParam === 'video' ? 'Apenas vídeos' : 'Todos os tipos');
+                doc.text(`Tipo de mídia: ${mediaTypeText}`, margin, yPos);
+                yPos += 5;
+            }
             
             yPos += 5;
             doc.setDrawColor(220, 220, 220);
@@ -1400,6 +1434,12 @@
                 currentUrl.searchParams.set('start_date', startDate);
                 currentUrl.searchParams.set('end_date', endDate);
                 
+                // Preserve media type filter if it exists
+                const mediaType = urlParams.get('media_type');
+                if (mediaType) {
+                    currentUrl.searchParams.set('media_type', mediaType);
+                }
+                
                 window.location.href = currentUrl.toString();
             } else {
                 alert('Por favor, selecione as datas inicial e final.');
@@ -1418,6 +1458,11 @@
             currentUrl.searchParams.delete('end_date');
             
             currentUrl.searchParams.set('show_all', 'true');
+            
+            const mediaType = urlParams.get('media_type');
+            if (mediaType) {
+                currentUrl.searchParams.set('media_type', mediaType);
+            }
             
             window.location.href = currentUrl.toString();
         });
@@ -1511,7 +1556,26 @@
             if (distributionChart) distributionChart.resize();
             if (timeSeriesChart) timeSeriesChart.resize();
         });
+
+        const mediaTypeFilter = document.getElementById('media-type-filter');
+        const urlParams = new URLSearchParams(window.location.search);
+        const mediaTypeParam = urlParams.get('media_type');
+
+        if (mediaTypeParam) {
+            mediaTypeFilter.value = mediaTypeParam;
+        }
+
+        mediaTypeFilter.addEventListener('change', function() {
+            const currentUrl = new URL(window.location.href);
+            
+            currentUrl.searchParams.delete('media_type');
+            
+            if (this.value !== 'all') {
+                currentUrl.searchParams.set('media_type', this.value);
+            }
+            
+            window.location.href = currentUrl.toString();
+        });
     });
 </script>
 {% endblock %}
-

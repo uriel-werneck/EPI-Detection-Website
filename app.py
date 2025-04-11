@@ -381,6 +381,8 @@ def relatorios():
     start_date_str = request.args.get('start_date')
     end_date_str = request.args.get('end_date')
     show_all = request.args.get('show_all') == 'true'
+    media_type = request.args.get('media_type', 'all')  
+    
     end_date = datetime.now()
     start_date = end_date - timedelta(days=7)
     
@@ -401,22 +403,31 @@ def relatorios():
     
     print(f"DEBUG: Date filter - start_date: {start_date}, end_date: {end_date}")
     print(f"DEBUG: Using custom filter: {using_custom_filter}, show_all: {show_all}")
+    print(f"DEBUG: Media type filter: {media_type}")
     
-    detections = Detection.query.filter(
+    # Consulta base com filtro de data
+    query = Detection.query.filter(
         Detection.user_id == current_user.id,
         Detection.timestamp >= start_date,
         Detection.timestamp <= end_date
-    ).all()
+    )
     
-    print(f"DEBUG: Found {len(detections)} detections in date range")
+    # Aplicar filtro de tipo de mídia
+    if media_type == 'image':
+        query = query.filter(Detection.upload_type == 'upload-imagem')
+    elif media_type == 'video':
+        query = query.filter(Detection.upload_type == 'upload-video')
     
-    video_count = Detection.query.filter(
-        Detection.user_id == current_user.id,
-        Detection.upload_type == 'upload-video',
-        Detection.timestamp >= start_date,
-        Detection.timestamp <= end_date
-    ).count()
+    # Obter as detecções filtradas
+    detections = query.all()
     
+    print(f"DEBUG: Found {len(detections)} detections in date range with media type filter: {media_type}")
+    
+    # Consulta para contagem de vídeos com os mesmos filtros
+    video_query = query.filter(Detection.upload_type == 'upload-video')
+    video_count = video_query.count()
+    
+    # Obter dados de série temporal com os mesmos filtros
     time_series_data = get_time_series_data(current_user.id, start_date, end_date)
     
     detection_stats = {
@@ -429,7 +440,8 @@ def relatorios():
             "end_date": end_date.strftime('%Y-%m-%d'),
             "is_custom": using_custom_filter,
             "show_all": show_all
-        }
+        },
+        "media_type": media_type  
     }
     
     now = datetime.now()
@@ -519,4 +531,3 @@ def minhas_deteccoes():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
