@@ -29,14 +29,13 @@ app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 app.secret_key = 'your_secret_key_here'
 app.config['UPLOAD_FOLDER'] = os.path.join(static_dir, 'uploads')
 app.config['RESULTS_FOLDER'] = os.path.join(static_dir, 'results')
-app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max upload
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['RESULTS_FOLDER'], exist_ok=True)
 
 init_db(app)
 
-# Verificar se as colunas existem no banco de dados
 def check_columns_exist():
     inspector = inspect(db.engine)
     columns = [column['name'] for column in inspector.get_columns('detections')]
@@ -46,7 +45,6 @@ def check_columns_exist():
         'is_stored_in_db': 'is_stored_in_db' in columns
     }
 
-# Verificar colunas ao iniciar a aplicação
 with app.app_context():
     columns_exist = check_columns_exist()
     print(f"Colunas existentes no banco: {columns_exist}")
@@ -83,19 +81,15 @@ def get_detected_classes(detections):
     return class_counts
 
 def get_time_series_data(user_id, start_date=None, end_date=None):
-    # If no dates provided, use default range (last 7 days)
     if start_date is None or end_date is None:
         end_date = datetime.now()
         start_date = end_date - timedelta(days=6)
     
-    # Calculate the number of days in the range
     days_diff = (end_date - start_date).days
     
-    # Ensure we have at least 1 day
     if days_diff < 1:
         days_diff = 1
     
-    # Generate formatted dates for the range
     formatted_dates = []
     current_date = start_date
     while current_date <= end_date:
@@ -106,7 +100,6 @@ def get_time_series_data(user_id, start_date=None, end_date=None):
     detections_data = [0] * len(formatted_dates)
     uploads_data = [0] * len(formatted_dates)
     
-    # MODIFY THIS: Use the date range in the SQL query
     raw_sql = text("""
         SELECT 
             date(timestamp) as date_only, 
@@ -126,7 +119,6 @@ def get_time_series_data(user_id, start_date=None, end_date=None):
         {"user_id": user_id, "start_date": start_date, "end_date": end_date}
     )
     
-    # Rest of your function remains the same...
     daily_data = {}
     for row in result:
         db_date = row[0]
@@ -143,7 +135,6 @@ def get_time_series_data(user_id, start_date=None, end_date=None):
             detections_data[i] = daily_data[date_str]['detections']
             uploads_data[i] = daily_data[date_str]['uploads']
     
-    # Debug info
     print("=" * 50)
     print("TIME SERIES DEBUG INFO")
     print(f"Start date: {start_date}")
@@ -163,7 +154,6 @@ def get_time_series_data(user_id, start_date=None, end_date=None):
 @app.route('/dashboard/upload/<type>', methods=['GET', 'POST'])
 @login_required
 def upload(type):
-    # Verificar se as colunas existem no banco de dados
     columns_exist = check_columns_exist()
     
     if request.method == 'GET':
@@ -184,7 +174,6 @@ def upload(type):
                 result_path = os.path.join(app.config['RESULTS_FOLDER'], result_filename)
                 cv.imwrite(result_path, image_with_boxes)
                 
-                # Criar o objeto Detection com os campos básicos
                 detection_data = {
                     'user_id': current_user.id,
                     'file_name': file.filename,
@@ -195,7 +184,6 @@ def upload(type):
                     'timestamp': datetime.now()
                 }
                 
-                # Adicionar campos adicionais se as colunas existirem
                 if columns_exist['image_data']:
                     image_base64 = image_to_base64(image_with_boxes)
                     detection_data['image_data'] = image_base64
@@ -218,21 +206,17 @@ def upload(type):
     elif type == 'upload-video':
         file = request.files.get('video')
         if file and file.filename:
-            # Salvar o vídeo temporariamente
             temp_dir = tempfile.mkdtemp()
             temp_video_path = os.path.join(temp_dir, file.filename)
             file.save(temp_video_path)
             
-            # Gerar um nome único para o vídeo processado
             unique_id = str(uuid.uuid4())[:8]
             output_filename = f"processed_{unique_id}_{file.filename}"
             output_path = os.path.join(app.config['RESULTS_FOLDER'], output_filename)
             
-            # Processar o vídeo
             result_info = process_video_with_classes(temp_video_path, output_path)
             
             if result_info:
-                # Criar o objeto Detection com os campos básicos
                 detection_data = {
                     'user_id': current_user.id,
                     'file_name': file.filename,
@@ -243,7 +227,6 @@ def upload(type):
                     'timestamp': datetime.now()
                 }
                 
-                # Adicionar campos adicionais se as colunas existirem
                 if columns_exist['image_data'] and result_info['frame_image_base64']:
                     detection_data['image_data'] = result_info['frame_image_base64']
                 
@@ -263,7 +246,6 @@ def upload(type):
             else:
                 flash('Erro ao processar o vídeo.', 'error')
                 
-            # Limpar arquivos temporários
             try:
                 os.remove(temp_video_path)
                 os.rmdir(temp_dir)
@@ -285,12 +267,9 @@ def get_detection_image(detection_id):
     if not detection:
         return "Detecção não encontrada", 404
     
-    # Verificar se a imagem está armazenada no banco de dados
     if columns_exist['image_data'] and hasattr(detection, 'image_data') and detection.image_data:
-        # Converter base64 para imagem
         image = base64_to_image(detection.image_data)
         
-        # Salvar temporariamente para enviar
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.jpg')
         temp_file.close()
         cv.imwrite(temp_file.name, image)
@@ -298,7 +277,6 @@ def get_detection_image(detection_id):
         return send_file(temp_file.name, mimetype='image/jpeg', as_attachment=True, 
                         download_name=f"detection_{detection_id}.jpg")
     else:
-        # Se não estiver no banco, tentar buscar do sistema de arquivos
         processed_filename = f"processed_{detection.file_name}"
         file_path = os.path.join(app.config['RESULTS_FOLDER'], processed_filename)
         
@@ -405,29 +383,24 @@ def relatorios():
     print(f"DEBUG: Using custom filter: {using_custom_filter}, show_all: {show_all}")
     print(f"DEBUG: Media type filter: {media_type}")
     
-    # Consulta base com filtro de data
     query = Detection.query.filter(
         Detection.user_id == current_user.id,
         Detection.timestamp >= start_date,
         Detection.timestamp <= end_date
     )
     
-    # Aplicar filtro de tipo de mídia
     if media_type == 'image':
         query = query.filter(Detection.upload_type == 'upload-imagem')
     elif media_type == 'video':
         query = query.filter(Detection.upload_type == 'upload-video')
     
-    # Obter as detecções filtradas
     detections = query.all()
     
     print(f"DEBUG: Found {len(detections)} detections in date range with media type filter: {media_type}")
     
-    # Consulta para contagem de vídeos com os mesmos filtros
     video_query = query.filter(Detection.upload_type == 'upload-video')
     video_count = video_query.count()
     
-    # Obter dados de série temporal com os mesmos filtros
     time_series_data = get_time_series_data(current_user.id, start_date, end_date)
     
     detection_stats = {
@@ -486,21 +459,17 @@ def minhas_deteccoes():
     for detection in detections:
         processed_filename = f"processed_{detection.file_name}"
         
-        # Verificar se a detecção está armazenada no banco de dados
         file_exists = True
         is_stored_in_db = False
         
         if columns_exist['is_stored_in_db'] and hasattr(detection, 'is_stored_in_db') and detection.is_stored_in_db:
             if columns_exist['image_data'] and hasattr(detection, 'image_data') and detection.image_data:
-                # Se estiver no banco, usamos a rota para obter a imagem
                 processed_filename = f"/get-detection-image/{detection.id}"
                 is_stored_in_db = True
             else:
-                # Caso contrário, verificamos se o arquivo existe no sistema de arquivos
                 file_path = os.path.join(app.config['RESULTS_FOLDER'], processed_filename)
                 file_exists = os.path.isfile(file_path)
         else:
-            # Verificar no sistema de arquivos
             file_path = os.path.join(app.config['RESULTS_FOLDER'], processed_filename)
             file_exists = os.path.isfile(file_path)
         
