@@ -478,13 +478,13 @@
             <label class="custom-checkbox">
                 <input type="checkbox" id="bar-chart-toggle" class="chart-toggle" checked>
                 <span class="checkmark"></span>
-                <span class="chart-toggle-label">Quantidade de Objetos</span>
+                <span class="chart-toggle-label">Quantidade de Classes</span>
             </label>
             
             <label class="custom-checkbox">
                 <input type="checkbox" id="pie-chart-toggle" class="chart-toggle" checked>
                 <span class="checkmark"></span>
-                <span class="chart-toggle-label">Distribuição dos Objetos</span>
+                <span class="chart-toggle-label">Distribuição das Classes</span>
             </label>
             
             <label class="custom-checkbox">
@@ -542,7 +542,7 @@
         <div class="charts-grid">
             <!-- Bar Chart Section -->
             <div id="bar-chart-section" class="report-section">
-                <h3 class="report-section-title">Quantidade de Objetos Detectados</h3>
+                <h3 class="report-section-title">Quantidade de Classes Detectadas</h3>
                 <div class="chart-container" style="height: 300px;">
                     <canvas id="classesChart"></canvas>
                 </div>
@@ -550,7 +550,7 @@
 
             <!-- Pie Chart Section -->
             <div id="pie-chart-section" class="report-section">
-                <h3 class="report-section-title">Distribuição dos Objetos</h3>
+                <h3 class="report-section-title">Distribuição dos Classes</h3>
                 <div class="chart-container" style="height: 300px;">
                     <canvas id="distributionChart"></canvas>
                 </div>
@@ -559,7 +559,7 @@
 
         <!-- Time Series Chart Section (Full Width) -->
         <div id="time-series-section" class="report-section">
-            <h3 class="report-section-title">Evolução da Detecção de Objetos por Data</h3>
+            <h3 class="report-section-title">Evolução da Detecção de Classes por Data</h3>
             <div class="chart-container" style="height: 350px;">
                 <canvas id="timeSeriesChart"></canvas>
             </div>
@@ -762,7 +762,7 @@
                 labels: timeSeriesData.dates,
                 datasets: [
                     {
-                        label: 'Objetos Detectados',
+                        label: 'Classes Detectadas',
                         data: timeSeriesData.detections,
                         borderColor: '#4361ee',
                         backgroundColor: 'rgba(67, 97, 238, 0.1)',
@@ -1019,7 +1019,7 @@
                 doc.setFontSize(14);
                 doc.setTextColor(textColor);
                 doc.setFont('helvetica', 'bold');
-                doc.text('Quantidade de Objetos Detectados', margin, yPos);
+                doc.text('Quantidade de Classes Detectadas', margin, yPos);
                 yPos += 10;
                 
                 const objectsData = [
@@ -1073,7 +1073,7 @@
                 doc.setFontSize(14);
                 doc.setTextColor(textColor);
                 doc.setFont('helvetica', 'bold');
-                doc.text('Distribuição dos Objetos', margin, yPos);
+                doc.text('Distribuição das Classes', margin, yPos);
                 yPos += 10;
                 
                 const distributionData = [
@@ -1119,11 +1119,11 @@
                 doc.setFontSize(14);
                 doc.setTextColor(textColor);
                 doc.setFont('helvetica', 'bold');
-                doc.text('Evolução da Detecção de Objetos por Data', margin, yPos);
+                doc.text('Evolução da Detecção de Classes por Data', margin, yPos);
                 yPos += 10;
                 
                 const timeSeriesTableData = [
-                    ['Data', 'Objetos Detectados', 'Uploads de Imagens']
+                    ['Data', 'Classes Detectadas', 'Uploads de Imagens']
                 ];
                 
                 const maxEntries = Math.min(dates.length, 10);
@@ -1180,7 +1180,7 @@
             
             const statsTextData = [
                 ['Métrica', 'Valor'],
-                ['Total de Objetos Detectados', totalDetections.toString()],
+                ['Total de Classes Detectadas', totalDetections.toString()],
                 ['Média de Detecções por Dia', avgDetectionsPerDay],
                 ['Dia com Mais Detecções', `${maxDetectionDate} (${maxDetections})`],
                 ['Objeto Mais Detectado', `${objectClasses[objectValues.indexOf(Math.max(...objectValues))]} (${Math.max(...objectValues)})`]
