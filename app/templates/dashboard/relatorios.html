@@ -938,436 +938,381 @@
     }
     
     async function generatePDF() {
-        try {
-            document.getElementById('pdf-loading').style.display = 'flex';
+    try {
+        document.getElementById('pdf-loading').style.display = 'flex';
+        
+        const totalImages = parseInt(document.querySelector('.stats-card-purple .stats-card-value').textContent);
+        const totalVideos = parseInt(document.querySelector('.stats-card-green .stats-card-value').textContent);
+        
+        const objectClasses = Object.keys(detectedClasses);
+        const objectValues = Object.values(detectedClasses);
+        const totalObjects = objectValues.reduce((a, b) => a + b, 0);
+        
+        const dates = timeSeriesData.dates;
+        const detections = timeSeriesData.detections;
+        const uploads = timeSeriesData.uploads;
+        
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+        
+        const primaryColor = '#4361ee';
+        const secondaryColor = '#f72585';
+        const textColor = '#1F2937';
+        const lightTextColor = '#6B7280';
+        
+        const margin = 15;
+        const pageWidth = 210;
+        const contentWidth = pageWidth - (margin * 2);
+        
+        function loadImage(src) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
+                img.onload = () => resolve(img);
+                img.onerror = () => {
+                    console.warn(`Não foi possível carregar a imagem: ${src}`);
+                    resolve(null);
+                };
+                img.src = src;
+            });
+        }
+
+        function calculateAspectRatioFit(srcWidth, srcHeight, maxWidth, maxHeight) {
+            const ratio = Math.min(maxWidth / srcWidth, maxHeight / srcHeight);
+            return { width: srcWidth * ratio, height: srcHeight * ratio };
+        }
+
+        function imageToDataURL(img, format = 'png') {
+            if (!img) return null;
             
-            const totalImages = parseInt(document.querySelector('.stats-card-purple .stats-card-value').textContent);
-            const totalVideos = parseInt(document.querySelector('.stats-card-green .stats-card-value').textContent);
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
             
-            const objectClasses = Object.keys(detectedClasses);
-            const objectValues = Object.values(detectedClasses);
-            const totalObjects = objectValues.reduce((a, b) => a + b, 0);
+            canvas.width = img.width;
+            canvas.height = img.height;
             
-            const dates = timeSeriesData.dates;
-            const detections = timeSeriesData.detections;
-            const uploads = timeSeriesData.uploads;
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: 'a4'
+            ctx.drawImage(img, 0, 0);
+            
+            try {
+                return canvas.toDataURL(`image/${format}`);
+            } catch (e) {
+                console.warn('Erro ao converter imagem:', e);
+                return null;
+            }
+        }
+
+        const images = await Promise.all([
+            loadImage("{{ url_for('static', filename='images/ifma_gra.png') }}"),
+            loadImage("{{ url_for('static', filename='images/LOGO_fábrica.png') }}"),
+            loadImage("{{ url_for('static', filename='images/logo-projeto.svg') }}")
+        ]);
+        
+        const validImages = images.filter(img => img !== null);
+        const imageDataURLs = validImages.map(img => imageToDataURL(img, 'png'));
+        
+        function addHeaderWithLogos(doc) {
+            const headerY = margin;
+            const maxLogoHeight = 20; 
+            const maxLogoWidth = 40;  
+            const spacing = 15;       
+            
+            const totalAvailableWidth = contentWidth;
+            
+            let totalLogosWidth = 0;
+            const logoDimensions = [];
+            
+            validImages.forEach((img) => {
+                const dimensions = calculateAspectRatioFit(
+                    img.width, 
+                    img.height, 
+                    maxLogoWidth, 
+                    maxLogoHeight
+                );
+                logoDimensions.push(dimensions);
+                totalLogosWidth += dimensions.width;
             });
             
-            const primaryColor = '#4361ee';
-            const secondaryColor = '#f72585';
-            const textColor = '#1F2937';
-            const lightTextColor = '#6B7280';
+            totalLogosWidth += spacing * (validImages.length - 1);
             
-            const margin = 15;
-            const pageWidth = 210;
-            const contentWidth = pageWidth - (margin * 2);
+            let currentX = margin + (totalAvailableWidth - totalLogosWidth) / 2;
             
-            let yPos = margin;
+            const maxHeight = Math.max(...logoDimensions.map(dim => dim.height));
             
-            doc.setFontSize(20);
+            validImages.forEach((img, index) => {
+                if (!imageDataURLs[index]) return;
+                
+                const dimensions = logoDimensions[index];
+                
+                const yOffset = (maxHeight - dimensions.height) / 2;
+                
+                doc.addImage(
+                    imageDataURLs[index], 
+                    'PNG', 
+                    currentX, 
+                    headerY + yOffset, 
+                    dimensions.width, 
+                    dimensions.height
+                );
+                
+                currentX += dimensions.width + spacing;
+            });
+            
+            return headerY + maxHeight + 10; 
+        }
+        
+        let yPos = addHeaderWithLogos(doc);
+        
+        doc.setFontSize(16); 
+        doc.setTextColor(textColor);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Relatório de Detecção de EPIs', margin, yPos);
+        yPos += 8; 
+        
+        doc.setFontSize(9); 
+        doc.setTextColor(lightTextColor);
+        doc.setFont('helvetica', 'normal');
+        
+        const currentDate = new Date().toLocaleString('pt-BR');
+        const userName = '{{ current_user.nome }} {{ current_user.sobrenome }}';
+        
+        doc.text(`Gerado em: ${currentDate}`, margin, yPos);
+        yPos += 4; 
+        doc.text(`Usuário: ${userName}`, margin, yPos);
+        yPos += 4; 
+        
+        if (dateFilter.is_custom) {
+            doc.text(`Período: ${dateFilter.start_date} a ${dateFilter.end_date}`, margin, yPos);
+            yPos += 4; 
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const mediaTypeParam = urlParams.get('media_type');
+        if (mediaTypeParam) {
+            const mediaTypeText = mediaTypeParam === 'image' ? 'Apenas imagens' : 
+                                 (mediaTypeParam === 'video' ? 'Apenas vídeos' : 'Todos os tipos');
+            doc.text(`Tipo de mídia: ${mediaTypeText}`, margin, yPos);
+            yPos += 4; 
+        }
+        
+        yPos += 3; 
+        doc.setDrawColor(220, 220, 220);
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+        yPos += 8; 
+        
+        const includeStats = document.getElementById('stats-cards-toggle').checked;
+        const includeBarChart = document.getElementById('bar-chart-toggle').checked;
+        const includePieChart = document.getElementById('pie-chart-toggle').checked;
+        const includeTimeSeries = document.getElementById('time-series-toggle').checked;
+        
+        const standardTableLayout = {
+            margin: { left: margin, right: margin },
+            tableWidth: contentWidth,
+            styles: {
+                fontSize: 9,
+                cellPadding: 4,
+                overflow: 'linebreak'
+            },
+            headStyles: {
+                fillColor: primaryColor,
+                textColor: '#FFFFFF',
+                fontStyle: 'bold'
+            },
+            alternateRowStyles: {
+                fillColor: [248, 250, 252]
+            }
+        };
+
+        if (includeStats) {
+            doc.setFontSize(13);
             doc.setTextColor(textColor);
             doc.setFont('helvetica', 'bold');
-            doc.text('Relatório de Detecção de EPIs', margin, yPos);
-            yPos += 10;
-            
-            doc.setFontSize(10);
-            doc.setTextColor(lightTextColor);
-            doc.setFont('helvetica', 'normal');
-            
-            const currentDate = new Date().toLocaleString('pt-BR');
-            const userName = '{{ current_user.nome }} {{ current_user.sobrenome }}';
-            
-            doc.text(`Gerado em: ${currentDate}`, margin, yPos);
-            yPos += 5;
-            doc.text(`Usuário: ${userName}`, margin, yPos);
-            yPos += 5;
-            
-            if (dateFilter.is_custom) {
-                doc.text(`Período: ${dateFilter.start_date} a ${dateFilter.end_date}`, margin, yPos);
-                yPos += 5;
-            }
 
-            const urlParams = new URLSearchParams(window.location.search);
-            const mediaTypeParam = urlParams.get('media_type');
-            if (mediaTypeParam) {
-                const mediaTypeText = mediaTypeParam === 'image' ? 'Apenas imagens' : 
-                                     (mediaTypeParam === 'video' ? 'Apenas vídeos' : 'Todos os tipos');
-                doc.text(`Tipo de mídia: ${mediaTypeText}`, margin, yPos);
-                yPos += 5;
-            }
-            
-            yPos += 5;
-            doc.setDrawColor(220, 220, 220);
-            doc.line(margin, yPos, pageWidth - margin, yPos);
-            yPos += 10;
-            
-            const includeStats = document.getElementById('stats-cards-toggle').checked;
-            const includeBarChart = document.getElementById('bar-chart-toggle').checked;
-            const includePieChart = document.getElementById('pie-chart-toggle').checked;
-            const includeTimeSeries = document.getElementById('time-series-toggle').checked;
-            
-            if (includeStats) {
-                doc.setFontSize(14);
-                doc.setTextColor(textColor);
-                doc.setFont('helvetica', 'bold');
-                doc.text('Estatísticas de Upload', margin, yPos);
-                yPos += 10;
-                
-                const statsData = [
-                    ['Tipo', 'Quantidade'],
-                    ['Uploads de Imagens', totalImages.toString()],
-                    ['Uploads de Vídeos', totalVideos.toString()]
-                ];
-                
-                doc.autoTable({
-                    startY: yPos,
-                    head: [statsData[0]],
-                    body: statsData.slice(1),
-                    theme: 'grid',
-                    headStyles: {
-                        fillColor: primaryColor,
-                        textColor: '#FFFFFF',
-                        fontStyle: 'bold'
-                    },
-                    styles: {
-                        fontSize: 10,
-                        cellPadding: 5
-                    },
-                    columnStyles: {
-                        0: { cellWidth: 80 },
-                        1: { cellWidth: 40, halign: 'center' }
-                    },
-                    margin: { left: margin, right: margin }
-                });
-                
-                yPos = doc.lastAutoTable.finalY + 15;
-            }
-            
+            const statsTitle = 'Estatísticas de Upload';
+            const statsTitleWidth = doc.getStringUnitWidth(statsTitle) * 13 / doc.internal.scaleFactor;
+            doc.text(statsTitle, margin + (contentWidth / 4) - (statsTitleWidth / 2), yPos);
+
+            const classesTitle = 'Quantidade de Classes Detectadas';
+            const classesTitleWidth = doc.getStringUnitWidth(classesTitle) * 13 / doc.internal.scaleFactor;
+            doc.text(classesTitle, margin + (contentWidth * 3 / 4) - (classesTitleWidth / 2), yPos);
+
+            const halfTableWidth = contentWidth / 2 - 5;
+
+            const statsData = [
+                ['Tipo', 'Quantidade'],
+                ['Uploads de Imagens', totalImages.toString()],
+                ['Uploads de Vídeos', totalVideos.toString()]
+            ];
+
+            doc.autoTable({
+                ...standardTableLayout,
+                tableWidth: halfTableWidth,
+                startY: yPos + 5,
+                head: [statsData[0]],
+                body: statsData.slice(1),
+                columnStyles: {
+                    0: { cellWidth: halfTableWidth * 0.6 },
+                    1: { cellWidth: halfTableWidth * 0.4, halign: 'center' }
+                }
+            });
+
             if (includeBarChart) {
-                doc.setFontSize(14);
-                doc.setTextColor(textColor);
-                doc.setFont('helvetica', 'bold');
-                doc.text('Quantidade de Classes Detectadas', margin, yPos);
-                yPos += 10;
-                
                 const objectsData = [
-                    ['Objeto', 'Quantidade', 'Percentual']
+                    ['Objeto', 'Quantidade', 'Percentual'],
+                    ...objectClasses.map((className, index) => {
+                        const value = objectValues[index];
+                        const percentage = ((value / totalObjects) * 100).toFixed(1) + '%';
+                        return [className, value.toString(), percentage];
+                    }),
+                    ['Total', totalObjects.toString(), '100%']
                 ];
-                
-                objectClasses.forEach((className, index) => {
-                    const value = objectValues[index];
-                    const percentage = ((value / totalObjects) * 100).toFixed(1) + '%';
-                    objectsData.push([className, value.toString(), percentage]);
-                });
-                
-                objectsData.push(['Total', totalObjects.toString(), '100%']);
-                
+
                 doc.autoTable({
-                    startY: yPos,
+                    ...standardTableLayout,
+                    tableWidth: halfTableWidth,
+                    startY: yPos + 5,
+                    margin: { left: margin + halfTableWidth + 10, right: margin },
                     head: [objectsData[0]],
-                    body: objectsData.slice(1),
-                    theme: 'grid',
-                    headStyles: {
-                        fillColor: primaryColor,
-                        textColor: '#FFFFFF',
-                        fontStyle: 'bold'
-                    },
-                    styles: {
-                        fontSize: 10,
-                        cellPadding: 5
-                    },
-                    columnStyles: {
-                        0: { cellWidth: 80 },
-                        1: { cellWidth: 40, halign: 'center' },
-                        2: { cellWidth: 40, halign: 'center' }
-                    },
-                    margin: { left: margin, right: margin },
+                    body: objectsData.slice(1, -1),
                     footStyles: {
                         fillColor: [240, 240, 240],
                         textColor: textColor,
                         fontStyle: 'bold'
+                    },
+                    foot: [objectsData[objectsData.length - 1]],
+                    columnStyles: {
+                        0: { cellWidth: halfTableWidth * 0.4 },
+                        1: { cellWidth: halfTableWidth * 0.3, halign: 'center' },
+                        2: { cellWidth: halfTableWidth * 0.3, halign: 'center' }
                     }
                 });
-                
-                yPos = doc.lastAutoTable.finalY + 15;
             }
-            
-            if (yPos > 250) {
-                doc.addPage();
-                yPos = margin;
-            }
-            
-            if (includePieChart && !includeBarChart) {
-                doc.setFontSize(14);
-                doc.setTextColor(textColor);
-                doc.setFont('helvetica', 'bold');
-                doc.text('Distribuição das Classes', margin, yPos);
-                yPos += 10;
-                
-                const distributionData = [
-                    ['Objeto', 'Percentual']
-                ];
-                
-                objectClasses.forEach((className, index) => {
-                    const value = objectValues[index];
-                    const percentage = ((value / totalObjects) * 100).toFixed(1) + '%';
-                    distributionData.push([className, percentage]);
-                });
-                
-                doc.autoTable({
-                    startY: yPos,
-                    head: [distributionData[0]],
-                    body: distributionData.slice(1),
-                    theme: 'grid',
-                    headStyles: {
-                        fillColor: primaryColor,
-                        textColor: '#FFFFFF',
-                        fontStyle: 'bold'
-                    },
-                    styles: {
-                        fontSize: 10,
-                        cellPadding: 5
-                    },
-                    columnStyles: {
-                        0: { cellWidth: 80 },
-                        1: { cellWidth: 40, halign: 'center' }
-                    },
-                    margin: { left: margin, right: margin }
-                });
-                
-                yPos = doc.lastAutoTable.finalY + 15;
-            }
-            
-            if (includeTimeSeries) {
-                if (yPos > 200) {
-                    doc.addPage();
-                    yPos = margin;
-                }
-                
-                doc.setFontSize(14);
-                doc.setTextColor(textColor);
-                doc.setFont('helvetica', 'bold');
-                doc.text('Evolução da Detecção de Classes por Data', margin, yPos);
-                yPos += 10;
-                
-                const timeSeriesTableData = [
-                    ['Data', 'Classes Detectadas', 'Uploads de Imagens']
-                ];
-                
-                const maxEntries = Math.min(dates.length, 10);
-                const startIndex = dates.length - maxEntries;
-                
-                for (let i = startIndex; i < dates.length; i++) {
-                    timeSeriesTableData.push([
-                        dates[i],
-                        detections[i].toString(),
-                        uploads[i].toString()
-                    ]);
-                }
-                
-                doc.autoTable({
-                    startY: yPos,
-                    head: [timeSeriesTableData[0]],
-                    body: timeSeriesTableData.slice(1),
-                    theme: 'grid',
-                    headStyles: {
-                        fillColor: primaryColor,
-                        textColor: '#FFFFFF',
-                        fontStyle: 'bold'
-                    },
-                    styles: {
-                        fontSize: 10,
-                        cellPadding: 5
-                    },
-                    columnStyles: {
-                        0: { cellWidth: 60 },
-                        1: { cellWidth: 50, halign: 'center' },
-                        2: { cellWidth: 50, halign: 'center' }
-                    },
-                    margin: { left: margin, right: margin }
-                });
-                
-                yPos = doc.lastAutoTable.finalY + 15;
-            }
-            
-            if (yPos > 250) {
-                doc.addPage();
-                yPos = margin;
-            }
-            
-            doc.setFontSize(14);
+
+            const lastTableEndY = Math.max(
+                doc.lastAutoTable ? doc.lastAutoTable.finalY : yPos + 5,
+                doc.previousAutoTable ? doc.previousAutoTable.finalY : yPos + 5
+            );
+
+            yPos = lastTableEndY + 15; 
+        }
+
+        if (includeTimeSeries) {
+            doc.setFontSize(13);
             doc.setTextColor(textColor);
             doc.setFont('helvetica', 'bold');
-            doc.text('Resumo Estatístico', margin, yPos);
-            yPos += 10;
-            
-            const totalDetections = detections.reduce((a, b) => a + b, 0);
-            const avgDetectionsPerDay = (totalDetections / dates.length).toFixed(1);
-            const maxDetections = Math.max(...detections);
-            const maxDetectionDate = dates[detections.indexOf(maxDetections)];
-            
-            const statsTextData = [
-                ['Métrica', 'Valor'],
-                ['Total de Classes Detectadas', totalDetections.toString()],
-                ['Média de Detecções por Dia', avgDetectionsPerDay],
-                ['Dia com Mais Detecções', `${maxDetectionDate} (${maxDetections})`],
-                ['Objeto Mais Detectado', `${objectClasses[objectValues.indexOf(Math.max(...objectValues))]} (${Math.max(...objectValues)})`]
+
+            const timeSeriesTitle = 'Evolução da Detecção de Classes por Data';
+            const timeSeriesTitleWidth = doc.getStringUnitWidth(timeSeriesTitle) * 13 / doc.internal.scaleFactor;
+            doc.text(timeSeriesTitle, margin + (contentWidth / 2) - (timeSeriesTitleWidth / 2), yPos);
+
+            const timeSeriesTableData = [
+                ['Data', 'Classes Detectadas', 'Uploads']
             ];
-            
+
+            const filteredDates = [];
+            const filteredDetections = [];
+            const filteredUploads = [];
+
+            for (let i = 0; i < dates.length; i++) {
+                if (detections[i] > 0 || uploads[i] > 0) {
+                    filteredDates.push(dates[i]);
+                    filteredDetections.push(detections[i]);
+                    filteredUploads.push(uploads[i]);
+                }
+            }
+
+            if (filteredDates.length === 0) {
+                const startIndex = Math.max(0, dates.length - 5);
+                for (let i = startIndex; i < dates.length; i++) {
+                    filteredDates.push(dates[i]);
+                    filteredDetections.push(detections[i]);
+                    filteredUploads.push(uploads[i]);
+                }
+            }
+
+            for (let i = 0; i < filteredDates.length; i++) {
+                timeSeriesTableData.push([
+                    filteredDates[i],
+                    filteredDetections[i].toString(),
+                    filteredUploads[i].toString()
+                ]);
+            }
+
             doc.autoTable({
-                startY: yPos,
-                head: [statsTextData[0]],
-                body: statsTextData.slice(1),
+                ...standardTableLayout,
+                startY: yPos + 5,
+                head: [timeSeriesTableData[0]],
+                body: timeSeriesTableData.slice(1),
                 theme: 'grid',
-                headStyles: {
-                    fillColor: primaryColor,
-                    textColor: '#FFFFFF',
-                    fontStyle: 'bold'
-                },
-                styles: {
-                    fontSize: 10,
-                    cellPadding: 5
-                },
                 columnStyles: {
-                    0: { cellWidth: 80 },
-                    1: { cellWidth: 80 }
-                },
-                margin: { left: margin, right: margin }
+                    0: { cellWidth: contentWidth * 0.4 }, 
+                    1: { cellWidth: contentWidth * 0.3, halign: 'center' }, 
+                    2: { cellWidth: contentWidth * 0.3, halign: 'center' } 
+                }
             });
 
-            const pageCount = doc.internal.getNumberOfPages();
-
-            function loadImage(src) {
-                return new Promise((resolve) => {
-                    const img = new Image();
-                    img.crossOrigin = "Anonymous";
-                    img.onload = () => resolve(img);
-                    img.onerror = () => {
-                        console.warn(`Não foi possível carregar a imagem: ${src}`);
-                        resolve(null);
-                    };
-                    img.src = src;
-                });
-            }
-
-            function calculateAspectRatioFit(srcWidth, srcHeight, maxWidth, maxHeight) {
-                const ratio = Math.min(maxWidth / srcWidth, maxHeight / srcHeight);
-                return { width: srcWidth * ratio, height: srcHeight * ratio };
-            }
-
-            function imageToDataURL(img, format = 'png') {
-                if (!img) return null;
-                
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                canvas.width = img.width;
-                canvas.height = img.height;
-                
-                ctx.fillStyle = '#FFFFFF';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                ctx.drawImage(img, 0, 0);
-                
-                try {
-                    return canvas.toDataURL(`image/${format}`);
-                } catch (e) {
-                    console.warn('Erro ao converter imagem:', e);
-                    return null;
-                }
-            }
-
-            Promise.all([
-                loadImage("{{ url_for('static', filename='images/ifma_gra.png') }}"),
-                loadImage("{{ url_for('static', filename='images/LOGO_fábrica.png') }}"),
-                loadImage("{{ url_for('static', filename='images/logo-projeto.svg') }}")
-            ]).then(images => {
-                const validImages = images.filter(img => img !== null);
-                
-                const imageDataURLs = validImages.map(img => imageToDataURL(img, 'png'));
-                
-                for (let i = 1; i <= pageCount; i++) {
-                    doc.setPage(i);
-                    
-                    const maxImageWidth = 40; 
-                    const maxImageHeight = 20; 
-                    const footerTextY = 290; 
-                    const footerImagesY = footerTextY - 25; 
-                    
-                    const availableWidth = pageWidth - (margin * 2);
-                    
-                    const imageCount = imageDataURLs.length;
-                    const totalImageWidth = maxImageWidth * imageCount;
-                    const spacing = (availableWidth - totalImageWidth) / (imageCount + 1);
-                    
-                    try {
-                        imageDataURLs.forEach((dataURL, j) => {
-                            if (!dataURL) return; 
-                            
-                            const img = validImages[j];
-                            
-                            const dimensions = calculateAspectRatioFit(
-                                img.width, 
-                                img.height, 
-                                maxImageWidth, 
-                                maxImageHeight
-                            );
-                            
-                            const imgX = margin + spacing * (j + 1) + (maxImageWidth * j) - (dimensions.width / 2);
-       
-                            const imgY = footerImagesY + ((maxImageHeight - dimensions.height) / 2);
-                            
-                            doc.addImage(
-                                dataURL, 
-                                'PNG', 
-                                imgX, 
-                                imgY, 
-                                dimensions.width, 
-                                dimensions.height
-                            );
-                        });
-                    } catch (error) {
-                        console.error('Erro ao adicionar imagens ao rodapé:', error);
-                    }
-                    
-                    doc.setFontSize(8);
-                    doc.setTextColor(lightTextColor);
-                    doc.text(`EPI Detection - Página ${i} de ${pageCount}`, margin, footerTextY);
-                    doc.text(`Gerado em: ${currentDate}`, pageWidth - margin - 50, footerTextY, { align: 'right' });
-                }
-                
-                doc.save('relatorio-epi-detection.pdf');
-                
-                document.getElementById('pdf-loading').style.display = 'none';
-            }).catch(error => {
-                console.error('Erro ao processar imagens:', error);
-                
-                for (let i = 1; i <= pageCount; i++) {
-                    doc.setPage(i);
-                    doc.setFontSize(8);
-                    doc.setTextColor(lightTextColor);
-                    doc.text(`EPI Detection - Página ${i} de ${pageCount}`, margin, 290);
-                    doc.text(`Gerado em: ${currentDate}`, pageWidth - margin - 50, 290, { align: 'right' });
-                }
-                
-                doc.save('relatorio-epi-detection.pdf');
-                
-                document.getElementById('pdf-loading').style.display = 'none';
-            });
-            
-        } catch (error) {
-            console.error('Erro na geração do PDF:', error);
-            alert('Ocorreu um erro ao gerar o PDF. Por favor, tente novamente.');
-            
-            document.getElementById('pdf-loading').style.display = 'none';
+            yPos = doc.lastAutoTable.finalY + 15; 
         }
+
+        doc.setFontSize(13);
+        doc.setTextColor(textColor);
+        doc.setFont('helvetica', 'bold');
+
+        const summaryTitle = 'Resumo Estatístico';
+        const summaryTitleWidth = doc.getStringUnitWidth(summaryTitle) * 13 / doc.internal.scaleFactor;
+        doc.text(summaryTitle, margin + (contentWidth / 2) - (summaryTitleWidth / 2), yPos);
+
+        const totalDetections = detections.reduce((a, b) => a + b, 0);
+        const avgDetectionsPerDay = (totalDetections / dates.length).toFixed(1);
+        const maxDetections = Math.max(...detections);
+        const maxDetectionDate = dates[detections.indexOf(maxDetections)];
+
+        const statsTextData = [
+            ['Métrica', 'Valor'],
+            ['Total de Classes Detectadas', totalDetections.toString()],
+            ['Média de Detecções por Dia', avgDetectionsPerDay],
+            ['Dia com Mais Detecções', `${maxDetectionDate} (${maxDetections})`],
+            ['Objeto Mais Detectado', `${objectClasses[objectValues.indexOf(Math.max(...objectValues))]} (${Math.max(...objectValues)})`]
+        ];
+
+        doc.autoTable({
+            ...standardTableLayout,
+            startY: yPos + 5,
+            head: [statsTextData[0]],
+            body: statsTextData.slice(1),
+            theme: 'grid',
+            columnStyles: {
+                0: { cellWidth: contentWidth * 0.5 },
+                1: { cellWidth: contentWidth * 0.5 }
+            }
+        });
+
+        const pageCount = doc.internal.getNumberOfPages();
+        
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(lightTextColor);
+            doc.text(`EPI Detection - Página ${i} de ${pageCount}`, margin, 290);
+            doc.text(`Gerado em: ${currentDate}`, pageWidth - margin - 50, 290, { align: 'right' });
+        }
+        
+        doc.save('relatorio-epi-detection.pdf');
+        document.getElementById('pdf-loading').style.display = 'none';
+        
+    } catch (error) {
+        console.error('Erro na geração do PDF:', error);
+        alert('Ocorreu um erro ao gerar o PDF. Por favor, tente novamente.');
+        
+        document.getElementById('pdf-loading').style.display = 'none';
     }
+}
     
     function initDateFilter() {
         const dateFilterBtn = document.getElementById('date-filter-btn');
