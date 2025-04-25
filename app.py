@@ -3,7 +3,6 @@ import os
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from database import db, init_db, User, Detection
-from validate_docbr import CPF
 import numpy as np
 import cv2 as cv
 from ultralytics import YOLO
@@ -19,8 +18,6 @@ import uuid
 import sqlite3
 
 model = YOLO(os.path.join('app', 'static', 'model', 'yolov8s_custom.pt'))
-
-cpf_validator = CPF()  
 
 template_dir = os.path.abspath('app/templates')
 static_dir = os.path.abspath('app/static')
@@ -315,17 +312,10 @@ def logout():
         session['_flashes'].clear()
     return redirect(url_for('index'))
 
-def can_register(email: str, senha: str, confirmar_senha: str, cpf: str) -> bool:
+def can_register(email: str, senha: str, confirmar_senha: str) -> bool:
     user_with_email = User.query.filter_by(email=email).first()
     if user_with_email:
         flash('Já existe um usuário com esse email!', 'error')
-        return False
-    if not cpf_validator.validate(cpf):
-        flash('CPF inválido!', 'error')
-        return False
-    user_with_cpf = User.query.filter_by(cpf=cpf).first()
-    if user_with_cpf:
-        flash('Já existe um usuário com esse CPF!')
         return False
     if senha != confirmar_senha:
         flash('Senhas não coincidem!', 'error')
@@ -337,14 +327,13 @@ def register():
     if request.method == "POST":
         nome = request.form.get('nome')
         sobrenome = request.form.get('sobrenome')
-        cpf = request.form.get('cpf')
         telefone = request.form.get('telefone')
         email = request.form.get('email')
         senha = request.form.get('senha')
         confirmar_senha = request.form.get('confirmar_senha')
-        if can_register(email, senha, confirmar_senha, cpf):
+        if can_register(email, senha, confirmar_senha):
             hash_password = generate_password_hash(senha)
-            new_user = User(nome=nome, sobrenome=sobrenome, cpf=cpf, telefone=telefone, email=email, senha=hash_password)
+            new_user = User(nome=nome, sobrenome=sobrenome, telefone=telefone, email=email, senha=hash_password)
             db.session.add(new_user)
             db.session.commit()
             flash('Usuário registrado com sucesso!', 'success')

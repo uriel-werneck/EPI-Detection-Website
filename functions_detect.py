@@ -6,28 +6,13 @@ import numpy as np
 import base64
 from io import BytesIO
 
-#model = YOLO('app/static/model/yolov8s_custom.pt')
 model = YOLO('app/static/model/modelo 1 (93 epochs).pt')
 
-# Pasta para armazenar frames extraídos de vídeos
 RESULTS_FRAMES_FOLDER = 'app/static/results/frames'
 TXT_VIDEOS_FOLDER = 'app/static/results/txt'
 
-# Criar pastas se não existirem
 os.makedirs(RESULTS_FRAMES_FOLDER, exist_ok=True)
 os.makedirs(TXT_VIDEOS_FOLDER, exist_ok=True)
-
-# TRANSLATIONS = {
-#     "helmet": "capacete",
-#     "vest": "colete",
-#     "gloves": "luvas",
-#     "boots": "botas",
-#     "safety-boot": "botas de segurança",
-#     "safety-vest": "colete de segurança",
-#     "glass": "vidro",
-#     "worker": "trabalhador",
-#     "person": "pessoa",
-# }
 
 TRANSLATIONS = {
     "helmet": "capacete",
@@ -60,38 +45,6 @@ COLORS = {
     }
 }
 
-# def draw_bounding_boxes(image, boxes, class_names=None, colors=None):
-#     """
-#     Desenha caixas coloridas ao redor dos objetos detectados com os nomes das classes.
-#     :param image: A imagem onde as caixas serão desenhadas.
-#     :param boxes: As coordenadas das caixas a serem desenhadas.
-#     :param class_names: Lista com os nomes das classes correspondentes às caixas.
-#     :param colors: Lista de cores para cada caixa (opcional).
-#     :return: A imagem com as caixas desenhadas.
-#     """
-#     if colors is None:
-#         colors = [(255, 0, 0) for _ in range(len(boxes))]  
-
-#     for i, box in enumerate(boxes):
-#         x1, y1, x2, y2 = map(int, box)
-
-#         cv2.rectangle(image, (x1, y1), (x2, y2), colors[i], 5)  
-
-#         if class_names and i < len(class_names):
-#             class_name = class_names[i]
-#             label = f"{class_name}"
-
-#             font_scale = 1.5
-#             font_thickness = 2
-#             (text_width, text_height), baseline = cv2.getTextSize(
-#                 label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, font_thickness
-#             )
-#             text_y = y1 - text_height - 5 if y1 - text_height - 5 > 0 else y1 + text_height + 5
-
-#             cv2.putText(image, label, (x1, text_y), cv2.FONT_HERSHEY_SIMPLEX,
-#                         font_scale, (255, 0, 0), font_thickness, cv2.LINE_AA)
-
-#     return image
 
 def draw_bounding_boxes(image, boxes, class_names=None):
     """
@@ -112,7 +65,6 @@ def draw_bounding_boxes(image, boxes, class_names=None):
 
             cv2.rectangle(image, (x1, y1), (x2, y2), COLORS[class_name]['body'], 5)
 
-            # nome da classe
             (compr_texto, larg_texto), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_DUPLEX, 1.5, 2)
             caixa_id = cv2.rectangle(image, (x1, y1 - 29), (x1 + compr_texto, y1), COLORS[class_name]['body'], -1)
             cv2.putText(caixa_id, label, (x1, y1 - 3), cv2.FONT_HERSHEY_DUPLEX, 1.5, COLORS[class_name]['text'], 2)
@@ -156,7 +108,7 @@ def process_video_with_classes(video_path, output_path):
     out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
 
     detected_classes = {}
-    frame_info = []  # Lista para armazenar informações sobre os frames
+    frame_info = []  
 
     frame_idx = 0
 
@@ -171,17 +123,14 @@ def process_video_with_classes(video_path, output_path):
         class_ids = results[0].boxes.cls.cpu().numpy().astype(int) if results[0].boxes else []
         class_names = [TRANSLATIONS.get(model.names[class_id].lower(), model.names[class_id].lower()) for class_id in class_ids] if results[0].boxes else []
 
-        # Desenhar as caixas de detecção em todos os frames (visualização)
         frame_with_boxes = draw_bounding_boxes(frame, boxes, class_names)
 
-        # Armazenar o frame e a quantidade de objetos detectados
         frame_info.append({
             'frame': frame_with_boxes,
             'num_objects': len(class_names),
             'class_names': class_names
         })
 
-        # Atualizar o dicionário de classes detectadas
         for class_name in class_names:
             if class_name in detected_classes:
                 detected_classes[class_name] += 1
@@ -195,17 +144,13 @@ def process_video_with_classes(video_path, output_path):
     out.release()
     print(f"Vídeo salvo em: {output_path}")
 
-    # Ordenar os frames pela quantidade de objetos detectados (em ordem decrescente)
     frame_info.sort(key=lambda x: x['num_objects'], reverse=True)
 
-    # Encontrar o frame com a maior quantidade de objetos (considerar o último em caso de empate)
     max_objects = frame_info[0]['num_objects'] if frame_info else 0
     max_frames = [frame for frame in frame_info if frame['num_objects'] == max_objects] if frame_info else []
 
-    # Considerar o último frame em caso de empate
-    selected_frame = max_frames[-1] if max_frames else None  # Último frame com a maior detecção
+    selected_frame = max_frames[-1] if max_frames else None  
     
-    # Informações para retornar
     result_info = {
         'detected_classes': [],
         'max_objects': 0,
@@ -219,15 +164,12 @@ def process_video_with_classes(video_path, output_path):
         selected_frame_image = selected_frame['frame']
         selected_frame_class_names = selected_frame['class_names']
         
-        # Salvar o frame com a maior quantidade de objetos (em caso de empate, o último)
         frame_filename = os.path.join(RESULTS_FRAMES_FOLDER, f"{os.path.basename(video_path).split('.')[0]}_max_objects_frame.jpg")
         cv2.imwrite(frame_filename, selected_frame_image)
         
-        # Converter a imagem para base64 para armazenar no banco de dados
         _, buffer = cv2.imencode('.jpg', selected_frame_image)
         frame_image_base64 = base64.b64encode(buffer).decode('utf-8')
         
-        # Gerar o relatório de texto com o frame que teve a maior detecção
         txt_path = os.path.join(TXT_VIDEOS_FOLDER, f"{os.path.basename(video_path).split('.')[0]}.txt")
         with open(txt_path, 'w', encoding='utf-8') as f:
             f.write(f"Relatório de Detecção de Classes - {os.path.basename(video_path)} - Data de criação: {formatted_date}\n")
@@ -235,7 +177,6 @@ def process_video_with_classes(video_path, output_path):
             for class_name in selected_frame_class_names:
                 f.write(f"{class_name}\n")
         
-        # Atualizar informações para retornar
         result_info.update({
             'detected_classes': selected_frame_class_names,
             'max_objects': max_objects,
