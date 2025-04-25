@@ -4,3 +4,9 @@ static/txt/
 static/uploads/
 _pycache_/
 *.pyc
+processed_*
+*.txt
+*.jpeg
+*.jpg
+*.png
+users.db
